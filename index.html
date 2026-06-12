@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Resumo Diário da Fazenda</title>
+<style>
+  :root{
+    --dark-green:#1B4332;
+    --mid-green:#2D6A4F;
+    --light-green:#40916C;
+    --pale-green:#D8F3DC;
+    --accent:#95D5B2;
+    --white:#FFFFFF;
+    --text:#1B1B1B;
+    --gray:#6c757d;
+    --baixa:#52B788;
+    --media:#FFC300;
+    --alta:#F77F00;
+    --urgente:#E63946;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    background:var(--pale-green);
+    color:var(--text);
+    line-height:1.4;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:#fff;
+    box-shadow:0 0 20px rgba(0,0,0,0.1);
+  }
+  /* HEADER / PROGRESS */
+  .app-header{
+    background:var(--dark-green);
+    padding:16px 16px 12px;
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  .app-title{
+    color:#fff;
+    font-size:18px;
+    font-weight:800;
+    text-align:center;
+    margin-bottom:10px;
+    letter-spacing:0.5px;
+  }
+  .progress-bar{
+    background:rgba(255,255,255,0.2);
+    height:12px;
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    background:var(--accent);
+    height:100%;
+    width:11.11%;
+    transition:width .35s ease;
+    border-radius:6px;
+  }
+  .progress-label{
+    color:#fff;
+    font-size:14px;
+    margin-top:8px;
+    text-align:center;
+    font-weight:700;
+  }
+  /* CONTENT */
+  .content{
+    flex:1;
+    padding:20px 16px 110px;
+  }
+  .form-section{display:none;animation:fadeIn .25s ease;}
+  .form-section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  .section-header{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:22px;
+    padding-bottom:14px;
+    border-bottom:3px solid var(--accent);
+  }
+  .section-icon{
+    font-size:42px;
+    line-height:1;
+  }
+  .section-header h2{
+    color:var(--dark-green);
+    font-size:21px;
+    font-weight:800;
+  }
+  .section-sub{
+    color:var(--gray);
+    font-size:13px;
+    margin-top:2px;
+  }
+
+  /* FIELDS */
+  .field{margin-bottom:18px;}
+  .field label{
+    display:block;
+    font-weight:700;
+    margin-bottom:8px;
+    color:var(--mid-green);
+    font-size:15px;
+  }
+  input[type="text"], input[type="number"], input[type="date"], input[type="time"], select, textarea{
+    width:100%;
+    padding:14px;
+    font-size:16px;
+    border:2px solid #cdd7d2;
+    border-radius:10px;
+    font-family:inherit;
+    background:#fff;
+    color:var(--text);
+  }
+  input:focus, select:focus, textarea:focus{
+    border-color:var(--light-green);
+    outline:none;
+  }
+  textarea{resize:vertical;min-height:80px;}
+  select[multiple]{
+    height:auto;
+    padding:6px;
+  }
+  select[multiple] option{
+    padding:12px 10px;
+    border-radius:8px;
+    font-size:15px;
+  }
+  select[multiple] option:checked{
+    background:var(--dark-green) linear-gradient(0deg, var(--dark-green) 0%, var(--dark-green) 100%);
+    color:#fff;
+  }
+  .hint{
+    font-size:12px;
+    color:var(--gray);
+    margin-bottom:10px;
+  }
+
+  /* CHOICE BUTTONS */
+  .btn-group{display:flex;gap:10px;flex-wrap:wrap;}
+  .choice-btn{
+    flex:1;
+    min-width:80px;
+    padding:18px 8px;
+    border:2px solid var(--light-green);
+    border-radius:12px;
+    background:#fff;
+    color:var(--dark-green);
+    font-size:17px;
+    font-weight:800;
+    cursor:pointer;
+    transition:all .15s;
+    text-align:center;
+  }
+  .choice-btn.selected{
+    background:var(--dark-green);
+    color:#fff;
+    border-color:var(--dark-green);
+    transform:scale(1.03);
+  }
+
+  /* BINARY BUTTONS (Sim/Não) */
+  .binary-btn{
+    flex:1;
+    padding:18px;
+    border:2px solid #cdd7d2;
+    border-radius:12px;
+    background:#fff;
+    font-size:18px;
+    font-weight:800;
+    cursor:pointer;
+    color:var(--gray);
+  }
+  .binary-btn[data-value="sim"].selected{
+    background:var(--alta);
+    border-color:var(--alta);
+    color:#fff;
+  }
+  .binary-btn[data-value="nao"].selected{
+    background:var(--baixa);
+    border-color:var(--baixa);
+    color:#fff;
+  }
+
+  /* CHECKBOX CARDS */
+  .checkbox-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px;
+    border:2px solid var(--accent);
+    border-radius:12px;
+    margin-bottom:12px;
+    cursor:pointer;
+    font-size:16px;
+    font-weight:700;
+    color:var(--dark-green);
+    background:#fff;
+    transition:background .15s,border-color .15s;
+  }
+  .checkbox-card.small{padding:12px;font-size:14px;margin-bottom:8px;}
+  .checkbox-card.small .cb-icon{font-size:20px;}
+  .checkbox-card .cb-icon{font-size:26px;}
+  .checkbox-card input[type="checkbox"]{
+    width:26px;
+    height:26px;
+    accent-color:var(--dark-green);
+    flex-shrink:0;
+  }
+  .checkbox-card:has(input:checked){
+    background:var(--pale-green);
+    border-color:var(--dark-green);
+  }
+
+  /* DYNAMIC ITEM CARDS */
+  .item-card{
+    position:relative;
+    border:2px solid var(--accent);
+    border-radius:14px;
+    padding:18px 14px 14px;
+    margin-bottom:16px;
+    background:var(--pale-green);
+  }
+  .item-card .item-title{
+    font-weight:800;
+    color:var(--dark-green);
+    margin-bottom:12px;
+    font-size:15px;
+  }
+  .remove-btn{
+    position:absolute;
+    top:-10px;
+    right:-10px;
+    background:var(--urgente);
+    color:#fff;
+    border:3px solid #fff;
+    border-radius:50%;
+    width:34px;
+    height:34px;
+    font-size:16px;
+    font-weight:900;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 2px 4px rgba(0,0,0,0.2);
+  }
+  .add-btn{
+    width:100%;
+    padding:18px;
+    background:var(--light-green);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    font-size:17px;
+    font-weight:800;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .add-btn:active{background:var(--mid-green);}
+  .add-btn-top{margin-bottom:16px;margin-top:0;}
+
+  /* URGENCY BUTTONS (genérico, cores aplicadas por nível) */
+  .urgency-group{display:flex;flex-wrap:wrap;gap:8px;}
+  .urgency-btn{
+    flex:1 1 45%;
+    padding:14px 6px;
+    border:2px solid #cdd7d2;
+    border-radius:10px;
+    background:#fff;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+    color:var(--text);
+  }
+  /* Seção 7 - Infraestrutura (3 níveis) */
+  .urgency-btn[data-level="pode-esperar"].selected{background:var(--baixa);border-color:var(--baixa);color:#fff;}
+  .urgency-btn[data-level="essa-semana"].selected{background:var(--media);border-color:var(--media);color:#1B1B1B;}
+  .urgency-btn[data-level="urgente7"].selected{background:var(--urgente);border-color:var(--urgente);color:#fff;}
+  /* Seção 8 - Solicitações (4 níveis) */
+  .urgency-btn[data-level="ate-amanha"].selected{background:var(--urgente);border-color:var(--urgente);color:#fff;}
+  .urgency-btn[data-level="semana-que-vem"].selected{background:var(--media);border-color:var(--media);color:#1B1B1B;}
+  .urgency-btn[data-level="manutencao-estoque"].selected{background:var(--baixa);border-color:var(--baixa);color:#fff;}
+  .urgency-btn[data-level="outro8"].selected{background:var(--gray);border-color:var(--gray);color:#fff;}
+
+  /* STATUS (3 opções - infraestrutura) */
+  .status-group{display:flex;gap:8px;flex-wrap:wrap;}
+  .status-btn{
+    flex:1 1 30%;
+    padding:12px 4px;
+    border:2px solid #cdd7d2;
+    border-radius:10px;
+    background:#fff;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+    text-align:center;
+    color:var(--text);
+  }
+  .status-btn.selected{background:var(--dark-green);color:#fff;border-color:var(--dark-green);}
+
+  /* PASTO CHECKLIST (multi-seleção com busca) */
+  .pasto-search{margin-bottom:8px;}
+  .pasto-checklist{
+    max-height:220px;
+    overflow-y:auto;
+    border:2px solid var(--accent);
+    border-radius:10px;
+    padding:8px;
+    background:#fff;
+  }
+  .pasto-checklist label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px;
+    border-radius:8px;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .pasto-checklist label:has(input:checked){
+    background:var(--pale-green);
+    font-weight:700;
+    color:var(--dark-green);
+  }
+  .pasto-checklist input[type="checkbox"]{
+    width:22px;height:22px;accent-color:var(--dark-green);flex-shrink:0;
+  }
+
+  /* DOSE GRID (vacinas) */
+  .dose-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:10px;
+    padding-top:12px;
+    border-top:1.5px dashed var(--accent);
+  }
+  .dose-grid .field{margin-bottom:0;}
+  .dose-grid label{font-size:12px;}
+
+  /* EQUIPE / PRESENÇA */
+  .attend-group{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .attend-btn{
+    padding:13px 4px;
+    border:2px solid #cdd7d2;
+    border-radius:10px;
+    background:#fff;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+    text-align:center;
+    color:var(--text);
+  }
+  .attend-btn.selected{background:var(--dark-green);color:#fff;border-color:var(--dark-green);}
+
+  /* CAMPOS DE HORA (lado a lado) */
+  .half-fields{display:flex;gap:10px;}
+  .half-field{flex:1;}
+  .half-field label{display:block;font-size:13px;font-weight:700;color:var(--mid-green);margin-bottom:6px;}
+
+  /* FOOTER NAV */
+  .nav-footer{
+    position:fixed;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:480px;
+    display:flex;
+    gap:10px;
+    padding:14px 16px;
+    background:#fff;
+    box-shadow:0 -2px 10px rgba(0,0,0,0.1);
+    z-index:20;
+  }
+  .nav-btn{
+    flex:1;
+    padding:18px;
+    font-size:18px;
+    font-weight:800;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--dark-green);color:#fff;}
+  .btn-secondary{background:#e9ecef;color:var(--dark-green);}
+  .btn-primary:active{background:var(--mid-green);}
+
+  /* SUMMARY */
+  #summarySection .summary-icon{
+    font-size:64px;
+    text-align:center;
+    display:block;
+    margin-bottom:10px;
+  }
+  #summarySection h2{
+    text-align:center;
+    color:var(--dark-green);
+    margin-bottom:20px;
+  }
+  #reportText{
+    white-space:pre-wrap;
+    background:var(--pale-green);
+    border:2px solid var(--accent);
+    border-radius:12px;
+    padding:16px;
+    font-size:13px;
+    font-family:'Consolas',monospace;
+    max-height:400px;
+    overflow-y:auto;
+    margin-bottom:16px;
+  }
+  .summary-actions{display:flex;flex-direction:column;gap:12px;}
+  .summary-actions button{
+    padding:18px;
+    font-size:17px;
+    font-weight:800;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+  }
+  .btn-whatsapp{background:#25D366;color:#fff;}
+  .btn-copy{background:var(--light-green);color:#fff;}
+  .btn-new{background:var(--dark-green);color:#fff;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="app-header">
+    <div class="app-title">🌱 Resumo Diário da Fazenda</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">Seção 1 de 9</div>
+  </header>
+
+  <main class="content" id="content">
+
+    <!-- ============ SEÇÃO 1: IDENTIFICAÇÃO ============ -->
+    <section class="form-section active" data-section="1">
+      <div class="section-header">
+        <div class="section-icon">🪪</div>
+        <div>
+          <h2>Identificação</h2>
+          <div class="section-sub">Informações iniciais do registro</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>📅 Data do Registro</label>
+        <input type="date" id="dataRegistro">
+      </div>
+
+      <div class="field">
+        <label>🏠 Fazenda</label>
+        <div class="btn-group">
+          <button type="button" class="choice-btn fazenda-btn" data-value="CB">CB</button>
+          <button type="button" class="choice-btn fazenda-btn" data-value="PB">PB</button>
+          <button type="button" class="choice-btn fazenda-btn" data-value="SH">SH</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>👤 Responsável (quem fez o resumo)</label>
+        <select id="responsavel" disabled>
+          <option value="">Selecione a fazenda primeiro</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>🐃 Boi Virtual — Atividades do dia</label>
+        <label class="checkbox-card"><input type="checkbox" id="bvChoveu"><span class="cb-icon">🌧️</span><span>Choveu</span></label>
+        <label class="checkbox-card"><input type="checkbox" id="bvMudei"><span class="cb-icon">🔀</span><span>Mudei o gado de pasto</span></label>
+        <label class="checkbox-card"><input type="checkbox" id="bvNutricao"><span class="cb-icon">🌾</span><span>Distribuí nutrição</span></label>
+        <label class="checkbox-card"><input type="checkbox" id="bvNascimento"><span class="cb-icon">🐣</span><span>Nascimento</span></label>
+        <label class="checkbox-card"><input type="checkbox" id="bvAborto"><span class="cb-icon">⚠️</span><span>Aborto / Natimorto</span></label>
+        <label class="checkbox-card"><input type="checkbox" id="bvMorte"><span class="cb-icon">💀</span><span>Morreu animal</span></label>
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO 2: CONFERÊNCIA DE REBANHO ============ -->
+    <section class="form-section" data-section="2">
+      <div class="section-header">
+        <div class="section-icon">🐄</div>
+        <div>
+          <h2>Conferência de Rebanho</h2>
+          <div class="section-sub">Contagem de animais hoje</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Conferiu o gado?</label>
+        <div class="btn-group">
+          <button type="button" class="choice-btn conferiu-btn" data-value="todo">✅ Gado todo</button>
+          <button type="button" class="choice-btn conferiu-btn" data-value="parte">🔸 Parte do gado</button>
+          <button type="button" class="choice-btn conferiu-btn" data-value="nao">❌ Não conferi</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>🔢 Total de animais Esperado</label>
+        <input type="number" min="0" id="totalEsperado2" placeholder="0">
+      </div>
+      <div class="field">
+        <label>🔢 Total de animais Encontrado</label>
+        <input type="number" min="0" id="totalEncontrado2" placeholder="0">
+      </div>
+
+      <div id="divergDetails" style="display:none;">
+        <div class="field">
+          <label>⚠️ Quantos faltaram</label>
+          <input type="number" id="qtdFaltou" readonly>
+        </div>
+        <div class="field">
+          <label>📍 Em qual(is) pasto(s) está a diferença?</label>
+          <input type="text" id="pastoSearch2" class="pasto-search" placeholder="🔍 Filtrar pasto..." oninput="filtrarPastos('pastoList2', this.value)">
+          <div class="pasto-checklist" id="pastoList2"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>📝 Observações sobre o rebanho</label>
+        <textarea id="obsRebanho" placeholder="Animal doente, fora do lote, perdido, etc."></textarea>
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO 3: SANIDADE ANIMAL ============ -->
+    <section class="form-section" data-section="3">
+      <div class="section-header">
+        <div class="section-icon">🩺</div>
+        <div>
+          <h2>Sanidade Animal</h2>
+          <div class="section-sub">Tratamentos realizados hoje</div>
+        </div>
+      </div>
+
+      <div id="tratamentosList"></div>
+      <button type="button" class="add-btn" onclick="addTratamento()">➕ Adicionar Tratamento</button>
+    </section>
+
+    <!-- ============ SEÇÃO 4: VACINAS E VERMÍFUGOS ============ -->
+    <section class="form-section" data-section="4">
+      <div class="section-header">
+        <div class="section-icon">💉</div>
+        <div>
+          <h2>Vacinas e Vermífugos</h2>
+          <div class="section-sub">Aplicações realizadas hoje</div>
+        </div>
+      </div>
+
+      <div id="vacinasList"></div>
+      <button type="button" class="add-btn" onclick="addVacina()">➕ Adicionar Aplicação</button>
+    </section>
+
+    <!-- ============ SEÇÃO 5: ATIVIDADES NO CURRAL ============ -->
+    <section class="form-section" data-section="5">
+      <div class="section-header">
+        <div class="section-icon">🐂</div>
+        <div>
+          <h2>Atividades no Curral</h2>
+          <div class="section-sub">O que foi feito hoje</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Teve atividade no curral hoje?</label>
+        <div class="btn-group">
+          <button type="button" class="binary-btn" data-group="curral" data-value="sim">⚠️ Sim</button>
+          <button type="button" class="binary-btn" data-group="curral" data-value="nao">✅ Não</button>
+        </div>
+      </div>
+
+      <div id="curralDetails" style="display:none;">
+        <div class="field">
+          <label>Atividades realizadas</label>
+          <label class="checkbox-card"><input type="checkbox" id="atvManejo"><span class="cb-icon">🐄</span><span>Manejo Geral do Gado</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvPesagem"><span class="cb-icon">⚖️</span><span>Pesagem de Animais</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvSeparacao"><span class="cb-icon">🔀</span><span>Separação de Lotes</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvProtocolo"><span class="cb-icon">📋</span><span>Protocolo de Reprodução</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvDiagnostico"><span class="cb-icon">🔬</span><span>Diagnóstico</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvMedicamentos"><span class="cb-icon">💉</span><span>Aplicação de Medicamentos ou Vacinas</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvDescorna"><span class="cb-icon">🪓</span><span>Descorna</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvOutras"><span class="cb-icon">➕</span><span>Outras Atividades</span></label>
+        </div>
+
+        <div class="field">
+          <label>Categoria(s) trabalhada(s)</label>
+          <p class="hint">Toque e segure (ou deslize) para selecionar mais de uma categoria.</p>
+          <select id="curralCategorias" class="curral-cat-select" multiple size="6"></select>
+        </div>
+
+        <div class="field">
+          <label>Quantidade de animais</label>
+          <input type="number" min="0" id="curralQtd" placeholder="Ex: 45">
+        </div>
+
+        <div class="field">
+          <label>📝 Observações / detalhes (descreva "Outras Atividades" aqui)</label>
+          <textarea id="curralObs" placeholder="Descreva o que foi realizado, produtos usados, lotes, etc."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO 6: NUTRIÇÃO E MISTURAS ============ -->
+    <section class="form-section" data-section="6">
+      <div class="section-header">
+        <div class="section-icon">🌾</div>
+        <div>
+          <h2>Nutrição e Misturas</h2>
+          <div class="section-sub">Misturas feitas na fábrica de ração</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Fez mistura hoje?</label>
+        <div class="btn-group">
+          <button type="button" class="binary-btn" data-group="mistura" data-value="sim">⚠️ Sim</button>
+          <button type="button" class="binary-btn" data-group="mistura" data-value="nao">✅ Não</button>
+        </div>
+      </div>
+
+      <div id="misturaDetails" style="display:none;">
+        <div id="misturasList"></div>
+        <button type="button" class="add-btn" onclick="addMistura()">➕ Adicionar Mistura</button>
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO 7: INFRAESTRUTURA ============ -->
+    <section class="form-section" data-section="7">
+      <div class="section-header">
+        <div class="section-icon">🔧</div>
+        <div>
+          <h2>Infraestrutura</h2>
+          <div class="section-sub">Manutenções e consertos</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Foi necessário alguma manutenção (conserto) hoje?</label>
+        <div class="btn-group">
+          <button type="button" class="binary-btn" data-group="infra" data-value="sim">⚠️ Sim</button>
+          <button type="button" class="binary-btn" data-group="infra" data-value="nao">✅ Não</button>
+        </div>
+      </div>
+
+      <div id="infraDetails" style="display:none;">
+        <div id="manutencoesList"></div>
+        <button type="button" class="add-btn" onclick="addManutencao()">➕ Adicionar Manutenção</button>
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO 8: SOLICITAÇÕES DE PRODUTOS ============ -->
+    <section class="form-section" data-section="8">
+      <div class="section-header">
+        <div class="section-icon">📦</div>
+        <div>
+          <h2>Solicitações de Produtos</h2>
+          <div class="section-sub">O que precisa ser comprado/repor</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tem alguma solicitação de produto ou serviço?</label>
+        <div class="btn-group">
+          <button type="button" class="binary-btn" data-group="solic" data-value="sim">⚠️ Sim</button>
+          <button type="button" class="binary-btn" data-group="solic" data-value="nao">✅ Não</button>
+        </div>
+      </div>
+
+      <div id="solicDetails" style="display:none;">
+        <button type="button" class="add-btn add-btn-top" onclick="addProduto()">➕ Adicionar Produto</button>
+        <div id="produtosList"></div>
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO 9: FECHAMENTO ============ -->
+    <section class="form-section" data-section="9">
+      <div class="section-header">
+        <div class="section-icon">✅</div>
+        <div>
+          <h2>Fechamento</h2>
+          <div class="section-sub">Equipe, máquinas e observações</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>🚜 Trator</label>
+        <div class="half-fields">
+          <div class="half-field"><label>Início</label><input type="time" id="tratorIni"></div>
+          <div class="half-field"><label>Término</label><input type="time" id="tratorFim"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>💧 Bomba d'água</label>
+        <div class="half-fields">
+          <div class="half-field"><label>Início</label><input type="time" id="bombaIni"></div>
+          <div class="half-field"><label>Término</label><input type="time" id="bombaFim"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>👥 Equipe do dia</label>
+        <div id="equipeList"></div>
+      </div>
+
+      <div class="field">
+        <label>📝 Observações gerais do dia</label>
+        <textarea id="obsGerais" placeholder="Qualquer informação importante sobre o dia de trabalho"></textarea>
+      </div>
+    </section>
+
+    <!-- ============ RESUMO FINAL ============ -->
+    <section class="form-section" id="summarySection" data-section="10">
+      <span class="summary-icon">🌾</span>
+      <h2>Resumo Concluído!</h2>
+      <div id="reportText"></div>
+      <div class="summary-actions">
+        <button class="btn-whatsapp" onclick="enviarWhatsApp()">📲 Enviar pelo WhatsApp</button>
+        <button class="btn-copy" onclick="copiarResumo()">📋 Copiar Resumo</button>
+        <button class="btn-new" onclick="location.reload()">🔄 Novo Registro</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="nav-footer" id="navFooter">
+    <button type="button" class="nav-btn btn-secondary" id="btnPrev">⬅ Anterior</button>
+    <button type="button" class="nav-btn btn-primary" id="btnNext">Próximo ➡</button>
+  </footer>
+
+</div>
+
+<script>
+  // ===================== DADOS DAS FAZENDAS =====================
+  const EQUIPE = {
+    CB: ['REINALDO','TONINHO','JOÃO PAULO','ALAN'],
+    PB: ['ROGÉRIO','GERALDO','GILBERTO','CÉLIO'],
+    SH: ['DANIEL','REINALDO','AILTON','CÉLIO']
+  };
+
+  const PASTOS = {
+    CB: ['AMOJADOR','MANGA 01 A','MANGA 01 B','MANGA 01 C','MANGA 01 D','MANGA 03 A','MANGA 03 B','MANGA 05 B','MANGA 05 BARRA','MANGA 05 C','MANGA 05 PLATÔ 1','MANGA 05 PLATÔ 2','MANGA 06 A','MANGA 06 B','MANGA 06 C','MANGA 07 A','MANGA 07 B','MANGA 07 BARRA CIPÓ','MANGA 08 – BAIXA','MANGA 08 – GENIPAPO','MANGA 08 - MORRO 1','MANGA 08 - MORRO 2','MANGA 08 - MORRO 3','MANGA 08 – PLATÔ','MANGA 09 BARRA 1','MANGA 09 BARRA 2','MANGA 09 PLATÔ 1','MANGA 09 PLATÔ 2','MANGA 09 PLATÔ 3','MANGA 10 A','MANGA 10 B','MANGA 11','MANGA 12','MANGA A','MANGA B','MANGA C','MANGA D','P. BAIA 01','P. BAIA 02','P. BAIA 03','P. BOMBA 01','P. BOMBA 02','P. BOMBA 03','P. BOMBA 04','P. CURRAL 01','P. CURRAL 02','P. CURRAL 03','P. CURRAL 04','P. REINALDO 01','P. REINALDO 02','P. REINALDO 03','ROTACIONADO 01','ROTACIONADO 02','ROTACIONADO 03','ROTACIONADO 04'],
+    PB: ['FUNDAÇA 01','FUNDAÇA 02','LAGE 1','ENCRUZILHADA','PEDRA 01','PEDRA 02','SERRA 01','SERRA 02','SERRA CIMA','JE GAMELEIRA','JAMBO 01','JAMBO 02','JAMBO CIMA','MANGA 04','RONALDO','ESTRADA','CANTÃO','MANGA A','MANGA B','MANGA C 01','MANGA C 02','MANGA C 03','MANGA 3 CASA','MANGA 3 CIMA','MANGA 01 PORTEIRA','MANGA 01 CIMA','MANGA 01 SALEIRO','MANGA 02','FRENTE','PIQUETES','MANGAS','JE PONTE','JE ESTRADA','JE MINA','JE GRAVATA','JE SEDE 01','JE SEDE 02','JE LUCINHO','JE RUA','JE ZE MARIA','ANTENA','BAMBU','COQUEIRO','JOVIANO','MANGA D','LAGE 2','MATA PB FUNDAÇA 01','MATA FRENTE','MATA CANTÃO','MATA CANTÃO 02'],
+    SH: ['FRENTE PLATÔ','FRENTE BURACO','FRENTE BAIXADA','FRENTE TOMBADA','PIQUETE GAMELEIRA','COLONIÃO 01','COLONIÃO 02','COLONIÃO 03','COLONIÃO 04','JOÃO BRAGA MORRO','JOÃO BRAGA BAIXADA','CURRAL 01','CURRAL 02','CURRAL FRENTE','MG5 01','MG5 02','MG5 03','MG5 04','AMOJADOR','LINDOMAR','FUNDÃO CIMA','FUNDÃO CIMA 02','FUNDÃO MEIO 01','FUNDÃO MEIO 02','FUNDÃO CANTO','CACHOEIRA MORRO','CACHOEIRA CIMA','CACHOEIRA BAIXA','B1 01','B1 02','B1 03','B1 04','B2 01','B2 02','B2 03','B2 04','TUIA 01','TUIA 02','TUIA 03','SORGO 01','SORGO 02','SORGO 03','SORGO 04','BURACÃO','FUNDO CASA REINALDO','PASTO SALEIRA','CAIXA DÁGUA','MATA SH 04','MATA SH07','REDONDEL MG5','PLANTIO NOVO','30 HECTARES']
+  };
+
+  const MAQUINAS = ['Trator','Bomba','Roçadeira','Moto','Veículo','Gerador','Outro'];
+
+  const CATEGORIAS_ANIMAL = ['Bezerros 0–7m','Bezerros 8–12m','Novilhas 13–24m','Garrotes 13–24m','Vacas','Bois'];
+
+  // ===================== CONFIG GERAL =====================
+  const totalSections = 9;
+  const sectionNames = ["Identificação","Conferência de Rebanho","Sanidade Animal","Vacinas e Vermífugos","Atividades no Curral","Nutrição e Misturas","Infraestrutura","Solicitações de Produtos","Fechamento"];
+  const sectionIcons = ["🪪","🐄","🩺","💉","🐂","🌾","🔧","📦","✅"];
+  let currentSection = 1;
+  let currentFazenda = '';
+
+  // ===================== INIT =====================
+  document.addEventListener('DOMContentLoaded', () => {
+    setDataAtual();
+    setupFazendaButtons();
+    setupConferiuButtons();
+    setupBinaryButtons();
+    setupTotaisRebanho();
+    addTratamento();
+    addVacina();
+    addMistura();
+    addProduto();
+    populateCurralCategorias();
+    setupNav();
+    updateUI();
+  });
+
+  function populateCurralCategorias(){
+    document.getElementById('curralCategorias').innerHTML =
+      CATEGORIAS_ANIMAL.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  function setDataAtual(){
+    const hoje = new Date();
+    const yyyy = hoje.getFullYear();
+    const mm = String(hoje.getMonth()+1).padStart(2,'0');
+    const dd = String(hoje.getDate()).padStart(2,'0');
+    document.getElementById('dataRegistro').value = `${yyyy}-${mm}-${dd}`;
+  }
+
+  function formatarData(iso){
+    if(!iso) return '-';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  // ===================== NAVEGAÇÃO =====================
+  function setupNav(){
+    document.getElementById('btnNext').addEventListener('click', () => {
+      if(!validateSection(currentSection)) return;
+      if(currentSection === totalSections){
+        gerarResumo();
+      }
+      currentSection++;
+      updateUI();
+      window.scrollTo(0,0);
+    });
+    document.getElementById('btnPrev').addEventListener('click', () => {
+      currentSection--;
+      updateUI();
+      window.scrollTo(0,0);
+    });
+  }
+
+  function updateUI(){
+    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+    if(currentSection <= totalSections){
+      document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.add('active');
+      document.getElementById('progressFill').style.width = (currentSection/totalSections*100) + '%';
+      document.getElementById('progressLabel').textContent = `${sectionIcons[currentSection-1]} Seção ${currentSection} de ${totalSections} — ${sectionNames[currentSection-1]}`;
+      document.getElementById('navFooter').style.display = 'flex';
+    } else {
+      document.getElementById('summarySection').classList.add('active');
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('progressLabel').textContent = '✅ Resumo Concluído';
+      document.getElementById('navFooter').style.display = 'none';
+    }
+
+    document.getElementById('btnPrev').style.visibility = currentSection <= 1 ? 'hidden' : 'visible';
+    document.getElementById('btnNext').textContent = currentSection === totalSections ? '✅ Finalizar' : 'Próximo ➡';
+  }
+
+  function validateSection(n){
+    if(n === 1){
+      const fazenda = document.querySelector('.fazenda-btn.selected');
+      const responsavel = document.getElementById('responsavel').value;
+      if(!fazenda || !responsavel){
+        alert('⚠️ Por favor, selecione a fazenda e o responsável antes de continuar.');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // ===================== SEÇÃO 1: FAZENDA / RESPONSÁVEL =====================
+  function setupFazendaButtons(){
+    document.querySelectorAll('.fazenda-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.fazenda-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        currentFazenda = btn.dataset.value;
+
+        const select = document.getElementById('responsavel');
+        select.innerHTML = '<option value="">Selecione...</option>' +
+          EQUIPE[currentFazenda].map(r => `<option value="${r}">${r}</option>`).join('');
+        select.disabled = false;
+
+        renderEquipe();
+        renderPastoChecklist2();
+        document.querySelectorAll('.manut-local').forEach(s => {
+          const card = s.closest('.item-card');
+          const tipo = card.querySelector('.manut-tipo').value;
+          if(tipo !== 'Maquina') populatePastoSelect(s);
+        });
+      });
+    });
+  }
+
+  // ===================== SEÇÃO 2: CONFERÊNCIA DE REBANHO =====================
+  function setupConferiuButtons(){
+    document.querySelectorAll('.conferiu-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.conferiu-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+  }
+
+  function setupTotaisRebanho(){
+    ['totalEsperado2','totalEncontrado2'].forEach(id => {
+      document.getElementById(id).addEventListener('input', checkDivergencia);
+    });
+  }
+
+  function checkDivergencia(){
+    const espVal = document.getElementById('totalEsperado2').value;
+    const encVal = document.getElementById('totalEncontrado2').value;
+    const div = document.getElementById('divergDetails');
+    if(espVal !== '' && encVal !== '' && Number(espVal) !== Number(encVal)){
+      div.style.display = 'block';
+      document.getElementById('qtdFaltou').value = Math.abs(Number(espVal) - Number(encVal));
+      if(document.getElementById('pastoList2').children.length === 0){
+        renderPastoChecklist2();
+      }
+    } else {
+      div.style.display = 'none';
+    }
+  }
+
+  function renderPastoChecklist2(){
+    const c = document.getElementById('pastoList2');
+    c.innerHTML = (PASTOS[currentFazenda] || []).map(p =>
+      `<label><input type="checkbox" class="pasto2-check" value="${p}"> ${p}</label>`
+    ).join('');
+  }
+
+  function filtrarPastos(containerId, term){
+    term = term.toLowerCase();
+    document.querySelectorAll('#'+containerId+' label').forEach(l => {
+      l.style.display = l.textContent.toLowerCase().includes(term) ? '' : 'none';
+    });
+  }
+
+  function populatePastoSelect(select){
+    const current = select.value;
+    select.innerHTML = '<option value="">— pasto —</option>' +
+      (PASTOS[currentFazenda] || []).map(p => `<option value="${p}">${p}</option>`).join('');
+    if(current) select.value = current;
+  }
+
+  // ===================== SEÇÃO 3: SANIDADE ANIMAL =====================
+  let tratamentoCount = 0;
+  function addTratamento(){
+    tratamentoCount++;
+    const id = 'trat' + tratamentoCount;
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
+      <div class="item-title">🩺 Tratamento ${tratamentoCount}</div>
+      <div class="field"><label>Identificação do Animal (brinco/nº)</label><input type="text" class="trat-animal" placeholder="Ex: 245"></div>
+      <div class="field"><label>Problema / Sintoma</label><input type="text" class="trat-problema" placeholder="Ex: Ferida na pata"></div>
+      <div class="field"><label>Tratamento Aplicado</label><input type="text" class="trat-aplicado" placeholder="Ex: Pomada cicatrizante"></div>
+      <div class="field" style="margin-bottom:0;"><label>Responsável</label><input type="text" class="trat-responsavel" placeholder="Nome do responsável"></div>
+    `;
+    document.getElementById('tratamentosList').appendChild(div);
+  }
+
+  // ===================== SEÇÃO 4: VACINAS E VERMÍFUGOS =====================
+  let vacinaCount = 0;
+  function addVacina(){
+    vacinaCount++;
+    const id = 'vac' + vacinaCount;
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
+      <div class="item-title">💉 Aplicação ${vacinaCount}</div>
+      <div class="field">
+        <label>Tipo</label>
+        <select class="vac-tipo">
+          <option value="Vacina">Vacina</option>
+          <option value="Vermífugo">Vermífugo</option>
+        </select>
+      </div>
+      <div class="field"><label>Nome do Produto</label><input type="text" class="vac-produto" placeholder="Ex: Aftosa, Ivermectina"></div>
+      <div class="field"><label>Quantidade de Animais</label><input type="number" min="0" class="vac-qtd" placeholder="0"></div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Categoria Animal</label>
+        <select class="vac-categoria">
+          <option value="">— selecione —</option>
+          ${CATEGORIAS_ANIMAL.map(c => `<option value="${c}">${c}</option>`).join('')}
+        </select>
+      </div>
+    `;
+    document.getElementById('vacinasList').appendChild(div);
+  }
+
+  // ===================== BINARY (SIM/NÃO) =====================
+  function setupBinaryButtons(){
+    const detailsMap = {
+      curral: 'curralDetails',
+      mistura: 'misturaDetails',
+      infra: 'infraDetails',
+      solic: 'solicDetails'
+    };
+    document.querySelectorAll('.binary-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.group;
+        document.querySelectorAll(`.binary-btn[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        const detailsEl = document.getElementById(detailsMap[group]);
+        if(detailsEl){
+          detailsEl.style.display = btn.dataset.value === 'sim' ? 'block' : 'none';
+        }
+      });
+    });
+  }
+
+  // ===================== SEÇÃO 6: NUTRIÇÃO E MISTURAS =====================
+  let misturaCount = 0;
+  function addMistura(){
+    misturaCount++;
+    const id = 'mix' + misturaCount;
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
+      <div class="item-title">🌾 Mistura ${misturaCount}</div>
+      <div class="field"><label>Sal Branco (kg)</label><input type="number" min="0" step="0.1" class="mix-salbranco" placeholder="0"></div>
+      <div class="field"><label>Sal Mineral 160 (kg)</label><input type="number" min="0" step="0.1" class="mix-mineral" placeholder="0"></div>
+      <div class="field"><label>Fubá (kg)</label><input type="number" min="0" step="0.1" class="mix-fuba" placeholder="0"></div>
+      <div class="field"><label>Ureia (kg)</label><input type="number" min="0" step="0.1" class="mix-ureia" placeholder="0"></div>
+      <div class="field"><label>Soja (kg)</label><input type="number" min="0" step="0.1" class="mix-soja" placeholder="0"></div>
+      <div class="field" style="margin-bottom:0;"><label>Promil (kg)</label><input type="number" min="0" step="0.1" class="mix-promil" placeholder="0"></div>
+    `;
+    document.getElementById('misturasList').appendChild(div);
+  }
+
+  // ===================== SEÇÃO 7: INFRAESTRUTURA =====================
+  let manutencaoCount = 0;
+  function addManutencao(){
+    const lista = document.getElementById('manutencoesList');
+    const cards = lista.querySelectorAll('.item-card');
+    if(cards.length > 0){
+      const last = cards[cards.length - 1];
+      const tipo = last.querySelector('.manut-tipo').value;
+      const local = last.querySelector('.manut-local').value;
+      const status = last.querySelector('.status-btn.selected');
+      if(!tipo || !local || !status){
+        alert('⚠️ Antes de adicionar uma nova manutenção, preencha o Tipo, o Local e o Status da manutenção anterior.');
+        return;
+      }
+    }
+
+    manutencaoCount++;
+    const id = 'manut' + manutencaoCount;
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
+      <div class="item-title">🔧 Manutenção ${manutencaoCount}</div>
+      <div class="field">
+        <label>Tipo</label>
+        <select class="manut-tipo" onchange="onTipoManutencaoChange(this)">
+          <option value="">Selecione...</option>
+          <option value="Bebedouro">Bebedouro</option>
+          <option value="Cocho">Cocho</option>
+          <option value="Cerca">Cerca</option>
+          <option value="Estrada">Estrada / Acesso</option>
+          <option value="Maquina">Máquina</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div class="field manut-bebedouro-sub" style="display:none;">
+        <label>O que precisa ser feito?</label>
+        <div class="btn-group">
+          <button type="button" class="choice-btn manut-beb-btn" data-value="Limpeza" onclick="selectChoice(this)">🧹 Limpeza</button>
+          <button type="button" class="choice-btn manut-beb-btn" data-value="Manutenção" onclick="selectChoice(this)">🔧 Manutenção</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="manut-local-label">Local (selecione o tipo primeiro)</label>
+        <select class="manut-local"><option value="">— selecione —</option></select>
+      </div>
+      <div class="field"><label>Descrição</label><textarea class="manut-desc" placeholder="Descreva o que precisa ser feito"></textarea></div>
+      <div class="field">
+        <label>Urgência</label>
+        <div class="btn-group urgency-group">
+          <button type="button" class="urgency-btn" data-level="pode-esperar" onclick="selectUrgency(this)">🟢 Pode esperar</button>
+          <button type="button" class="urgency-btn" data-level="essa-semana" onclick="selectUrgency(this)">🟡 Essa semana</button>
+          <button type="button" class="urgency-btn" data-level="urgente7" onclick="selectUrgency(this)">🔴 Urgente</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Status</label>
+        <div class="btn-group status-group">
+          <button type="button" class="status-btn" data-value="Será feito" onclick="selectStatus(this)">⏳ Será feito</button>
+          <button type="button" class="status-btn" data-value="Em andamento" onclick="selectStatus(this)">🔄 Em andamento</button>
+          <button type="button" class="status-btn" data-value="Feito" onclick="selectStatus(this)">✅ Feito</button>
+        </div>
+      </div>
+    `;
+    lista.appendChild(div);
+  }
+
+  function onTipoManutencaoChange(select){
+    const card = select.closest('.item-card');
+    const tipo = select.value;
+    const bebSub = card.querySelector('.manut-bebedouro-sub');
+    const localSelect = card.querySelector('.manut-local');
+    const localLabel = card.querySelector('.manut-local-label');
+
+    bebSub.style.display = (tipo === 'Bebedouro') ? 'block' : 'none';
+    if(!bebSub.style.display || tipo !== 'Bebedouro'){
+      bebSub.querySelectorAll('.manut-beb-btn').forEach(b => b.classList.remove('selected'));
+    }
+
+    if(tipo === 'Maquina'){
+      localLabel.textContent = 'Qual máquina';
+      localSelect.innerHTML = '<option value="">— selecione —</option>' + MAQUINAS.map(m => `<option value="${m}">${m}</option>`).join('');
+    } else if(tipo === ''){
+      localLabel.textContent = 'Local (selecione o tipo primeiro)';
+      localSelect.innerHTML = '<option value="">— selecione —</option>';
+    } else {
+      localLabel.textContent = 'Local (pasto)';
+      populatePastoSelect(localSelect);
+      localSelect.value = '';
+    }
+  }
+
+  function selectChoice(btn){
+    btn.parentElement.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function selectStatus(btn){
+    btn.parentElement.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  // ===================== URGÊNCIA =====================
+  function selectUrgency(btn){
+    btn.parentElement.querySelectorAll('.urgency-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function selectUrgency8(btn){
+    selectUrgency(btn);
+    const card = btn.closest('.item-card');
+    const outroInput = card.querySelector('.prod-urg-outro');
+    outroInput.style.display = (btn.dataset.level === 'outro8') ? 'block' : 'none';
+  }
+
+  // ===================== SEÇÃO 8: SOLICITAÇÃO DE PRODUTOS =====================
+  let produtoCount = 0;
+  function addProduto(){
+    produtoCount++;
+    const id = 'prod' + produtoCount;
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
+      <div class="item-title">📦 Produto ${produtoCount}</div>
+      <div class="field">
+        <label>Tipo</label>
+        <select class="prod-tipo">
+          <option value="">Selecione...</option>
+          <option>Produto veterinário</option>
+          <option>Produto de nutrição</option>
+          <option>Material de infraestrutura</option>
+          <option>Serviço externo</option>
+          <option>Equipamento / máquina</option>
+          <option>Outro</option>
+        </select>
+      </div>
+      <div class="field"><label>Descrição</label><input type="text" class="prod-desc" placeholder="Ex: Sal mineral, arame liso"></div>
+      <div class="field"><label>Quantidade</label><input type="text" class="prod-qtd" placeholder="Ex: 10 sacos, 50 kg"></div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Urgência</label>
+        <div class="btn-group urgency-group">
+          <button type="button" class="urgency-btn" data-level="ate-amanha" onclick="selectUrgency8(this)">🔴 Até amanhã</button>
+          <button type="button" class="urgency-btn" data-level="semana-que-vem" onclick="selectUrgency8(this)">🟡 Semana que vem</button>
+          <button type="button" class="urgency-btn" data-level="manutencao-estoque" onclick="selectUrgency8(this)">🟢 Manutenção de estoque</button>
+          <button type="button" class="urgency-btn" data-level="outro8" onclick="selectUrgency8(this)">⚪ Outro</button>
+        </div>
+        <input type="text" class="prod-urg-outro" placeholder="Descreva a urgência" style="display:none;margin-top:8px;">
+      </div>
+    `;
+    document.getElementById('produtosList').appendChild(div);
+  }
+
+  // ===================== SEÇÃO 9: EQUIPE =====================
+  function renderEquipe(){
+    const c = document.getElementById('equipeList');
+    c.innerHTML = (EQUIPE[currentFazenda] || []).map(nome => `
+      <div class="item-card equipe-card">
+        <div class="item-title">👤 ${nome}</div>
+        <div class="btn-group attend-group">
+          <button type="button" class="attend-btn" data-value="Integral" onclick="selectAttend(this)">Integral</button>
+          <button type="button" class="attend-btn" data-value="Meio período" onclick="selectAttend(this)">Meio período</button>
+          <button type="button" class="attend-btn" data-value="Falta" onclick="selectAttend(this)">Falta</button>
+          <button type="button" class="attend-btn" data-value="Folga combinada" onclick="selectAttend(this)">Folga combinada</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function selectAttend(btn){
+    btn.parentElement.querySelectorAll('.attend-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  // ===================== UTIL =====================
+  function removeItem(id){
+    const el = document.getElementById(id);
+    if(el) el.remove();
+  }
+
+  // ===================== GERAR RESUMO =====================
+  function gerarResumo(){
+    let r = '';
+    r += `🌱 RESUMO DIÁRIO DA FAZENDA\n`;
+    r += `==============================\n\n`;
+
+    // Seção 1 - Identificação
+    r += `🪪 IDENTIFICAÇÃO\n`;
+    r += `Data: ${formatarData(document.getElementById('dataRegistro').value)}\n`;
+    r += `Fazenda: ${currentFazenda || '-'}\n`;
+    r += `Responsável: ${document.getElementById('responsavel').value || '-'}\n`;
+    const bv = [
+      ['bvChoveu','Choveu'],['bvMudei','Mudei o gado de pasto'],['bvNutricao','Distribuí nutrição'],
+      ['bvNascimento','Nascimento'],['bvAborto','Aborto / Natimorto'],['bvMorte','Morreu animal']
+    ].filter(([id]) => document.getElementById(id).checked).map(([,label]) => label);
+    r += `Boi Virtual: ${bv.length ? bv.join(', ') : 'Nenhuma atividade marcada'}\n\n`;
+
+    // Seção 2 - Conferência de Rebanho
+    r += `🐄 CONFERÊNCIA DE REBANHO\n`;
+    const conferiuBtn = document.querySelector('.conferiu-btn.selected');
+    const conferiuLabel = {todo:'Sim — gado todo', parte:'Sim — parte do gado', nao:'Não conferi'};
+    r += `Conferiu o gado: ${conferiuBtn ? conferiuLabel[conferiuBtn.dataset.value] : '-'}\n`;
+    r += `Total Esperado: ${document.getElementById('totalEsperado2').value || '0'}\n`;
+    r += `Total Encontrado: ${document.getElementById('totalEncontrado2').value || '0'}\n`;
+    if(document.getElementById('divergDetails').style.display !== 'none'){
+      r += `Faltaram: ${document.getElementById('qtdFaltou').value}\n`;
+      const pastosDiv = Array.from(document.querySelectorAll('.pasto2-check:checked')).map(c => c.value);
+      r += `Pasto(s) com diferença: ${pastosDiv.length ? pastosDiv.join(', ') : 'Não informado'}\n`;
+    }
+    const obsRebanho = document.getElementById('obsRebanho').value;
+    if(obsRebanho) r += `Observações: ${obsRebanho}\n`;
+    r += `\n`;
+
+    // Seção 3 - Sanidade Animal
+    r += `🩺 SANIDADE ANIMAL\n`;
+    const tratCards = document.querySelectorAll('#tratamentosList .item-card');
+    let temTratamento = false;
+    tratCards.forEach((card, i) => {
+      const animal = card.querySelector('.trat-animal').value;
+      const problema = card.querySelector('.trat-problema').value;
+      const aplicado = card.querySelector('.trat-aplicado').value;
+      const responsavel = card.querySelector('.trat-responsavel').value;
+      if(animal || problema || aplicado || responsavel){
+        temTratamento = true;
+        r += `- Animal: ${animal || '-'} | Problema: ${problema || '-'} | Tratamento: ${aplicado || '-'} | Responsável: ${responsavel || '-'}\n`;
+      }
+    });
+    if(!temTratamento) r += `Nenhum animal doente ou medicado hoje.\n`;
+    r += `\n`;
+
+    // Seção 4 - Vacinas e Vermífugos
+    r += `💉 VACINAS E VERMÍFUGOS\n`;
+    const vacCards = document.querySelectorAll('#vacinasList .item-card');
+    let temVacina = false;
+    vacCards.forEach((card, i) => {
+      const tipo = card.querySelector('.vac-tipo').value;
+      const produto = card.querySelector('.vac-produto').value;
+      const qtd = card.querySelector('.vac-qtd').value;
+      const categoria = card.querySelector('.vac-categoria').value;
+      if(produto || Number(qtd) > 0){
+        temVacina = true;
+        r += `- ${tipo}: ${produto || '-'} | Qtd Animais: ${qtd || '0'}${categoria ? ' | Categoria: ' + categoria : ''}\n`;
+      }
+    });
+    if(!temVacina) r += `Nenhuma aplicação de vacina/vermífugo hoje.\n`;
+    r += `\n`;
+
+    // Seção 5 - Atividades no Curral
+    r += `🐂 ATIVIDADES NO CURRAL\n`;
+    const curralSim = document.querySelector('.binary-btn[data-group="curral"][data-value="sim"].selected');
+    if(curralSim){
+      const atividades = [
+        ['atvManejo','Manejo Geral do Gado'],['atvPesagem','Pesagem de Animais'],['atvSeparacao','Separação de Lotes'],
+        ['atvProtocolo','Protocolo de Reprodução'],['atvDiagnostico','Diagnóstico'],['atvMedicamentos','Aplicação de Medicamentos ou Vacinas'],
+        ['atvDescorna','Descorna'],['atvOutras','Outras Atividades']
+      ].filter(([id]) => document.getElementById(id).checked).map(([,label]) => label);
+      r += `Atividades: ${atividades.length ? atividades.join(', ') : 'Nenhuma marcada'}\n`;
+      const categorias = Array.from(document.getElementById('curralCategorias').selectedOptions).map(o => o.value);
+      r += `Categorias trabalhadas: ${categorias.length ? categorias.join(', ') : '-'}\n`;
+      r += `Quantidade de animais: ${document.getElementById('curralQtd').value || '0'}\n`;
+      const curralObs = document.getElementById('curralObs').value;
+      if(curralObs) r += `Observações: ${curralObs}\n`;
+    } else {
+      r += `Nenhuma atividade no curral hoje.\n`;
+    }
+    r += `\n`;
+
+    // Seção 6 - Nutrição e Misturas
+    r += `🌾 NUTRIÇÃO E MISTURAS\n`;
+    const mixSim = document.querySelector('.binary-btn[data-group="mistura"][data-value="sim"].selected');
+    if(mixSim){
+      document.querySelectorAll('#misturasList .item-card').forEach((card, i) => {
+        const salbranco = card.querySelector('.mix-salbranco').value || '0';
+        const mineral = card.querySelector('.mix-mineral').value || '0';
+        const fuba = card.querySelector('.mix-fuba').value || '0';
+        const ureia = card.querySelector('.mix-ureia').value || '0';
+        const soja = card.querySelector('.mix-soja').value || '0';
+        const promil = card.querySelector('.mix-promil').value || '0';
+        r += `- Mistura ${i+1}: Sal Branco ${salbranco}kg | Sal Mineral 160 ${mineral}kg | Fubá ${fuba}kg | Ureia ${ureia}kg | Soja ${soja}kg | Promil ${promil}kg\n`;
+      });
+    } else {
+      r += `Nenhuma mistura feita hoje.\n`;
+    }
+    r += `\n`;
+
+    // Seção 7 - Infraestrutura
+    r += `🔧 INFRAESTRUTURA\n`;
+    const infraSim = document.querySelector('.binary-btn[data-group="infra"][data-value="sim"].selected');
+    if(infraSim){
+      const cards = document.querySelectorAll('#manutencoesList .item-card');
+      if(cards.length === 0) r += `Nenhuma manutenção registrada.\n`;
+      cards.forEach((card, i) => {
+        const tipo = card.querySelector('.manut-tipo').value || '-';
+        const bebAtividade = card.querySelector('.manut-beb-btn.selected');
+        const local = card.querySelector('.manut-local').value || '-';
+        const desc = card.querySelector('.manut-desc').value || '-';
+        const urg = card.querySelector('.urgency-btn.selected');
+        const status = card.querySelector('.status-btn.selected');
+        r += `- Manutenção ${i+1}: Tipo: ${tipo}`;
+        if(bebAtividade) r += ` (${bebAtividade.dataset.value})`;
+        r += ` | Local: ${local} | Descrição: ${desc} | Urgência: ${urg ? urg.textContent.trim() : '-'} | Status: ${status ? status.dataset.value : '-'}\n`;
+      });
+    } else {
+      r += `Nenhuma manutenção necessária hoje.\n`;
+    }
+    r += `\n`;
+
+    // Seção 8 - Solicitações de Produtos
+    r += `📦 SOLICITAÇÕES DE PRODUTOS\n`;
+    const solicSim = document.querySelector('.binary-btn[data-group="solic"][data-value="sim"].selected');
+    if(solicSim){
+      const cards = document.querySelectorAll('#produtosList .item-card');
+      let temProduto = false;
+      cards.forEach((card, i) => {
+        const tipo = card.querySelector('.prod-tipo').value;
+        const desc = card.querySelector('.prod-desc').value;
+        const qtd = card.querySelector('.prod-qtd').value;
+        const urg = card.querySelector('.urgency-btn.selected');
+        const urgOutro = card.querySelector('.prod-urg-outro').value;
+        if(tipo || desc){
+          temProduto = true;
+          let urgTexto = urg ? urg.textContent.trim() : '-';
+          if(urg && urg.dataset.level === 'outro8' && urgOutro) urgTexto += ` (${urgOutro})`;
+          r += `- ${desc || '-'} (${tipo || '-'}) | Qtd: ${qtd || '-'} | Urgência: ${urgTexto}\n`;
+        }
+      });
+      if(!temProduto) r += `Nenhum produto preenchido.\n`;
+    } else {
+      r += `Nenhuma solicitação hoje.\n`;
+    }
+    r += `\n`;
+
+    // Seção 9 - Fechamento
+    r += `✅ FECHAMENTO\n`;
+    r += `Trator: ${document.getElementById('tratorIni').value || '--:--'} às ${document.getElementById('tratorFim').value || '--:--'}\n`;
+    r += `Bomba d'água: ${document.getElementById('bombaIni').value || '--:--'} às ${document.getElementById('bombaFim').value || '--:--'}\n`;
+    r += `\nEquipe do dia:\n`;
+    document.querySelectorAll('#equipeList .equipe-card').forEach(card => {
+      const nome = card.querySelector('.item-title').textContent.replace('👤 ','');
+      const attend = card.querySelector('.attend-btn.selected');
+      r += `- ${nome}: ${attend ? attend.dataset.value : 'Não informado'}\n`;
+    });
+    const obsGerais = document.getElementById('obsGerais').value;
+    if(obsGerais) r += `\nObservações gerais: ${obsGerais}\n`;
+
+    document.getElementById('reportText').textContent = r;
+    window._reportText = r;
+  }
+
+  function copiarResumo(){
+    navigator.clipboard.writeText(window._reportText || '').then(() => {
+      alert('✅ Resumo copiado!');
+    }).catch(() => {
+      alert('Não foi possível copiar. Selecione o texto manualmente.');
+    });
+  }
+
+  function enviarWhatsApp(){
+    const texto = encodeURIComponent(window._reportText || '');
+    window.open(`https://wa.me/?text=${texto}`, '_blank');
+  }
+</script>
+</body>
+</html>
