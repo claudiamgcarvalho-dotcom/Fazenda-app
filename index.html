@@ -126,6 +126,15 @@
     border-color:var(--light-green);
     outline:none;
   }
+  input.field-error, select.field-error, textarea.field-error{
+    border-color:var(--urgente) !important;
+    box-shadow:0 0 0 3px rgba(230,57,70,0.15);
+  }
+  .btn-group.field-error, .field.field-error{
+    border:2px solid var(--urgente);
+    border-radius:14px;
+    padding:8px;
+  }
   textarea{resize:vertical;min-height:80px;}
   select[multiple]{
     height:auto;
@@ -255,6 +264,39 @@
     justify-content:center;
     box-shadow:0 2px 4px rgba(0,0,0,0.2);
   }
+  .trat-collapsed-btn{
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:16px;
+    border:2px solid var(--dark-green);
+    border-radius:14px;
+    background:var(--pale-green);
+    color:var(--dark-green);
+    font-weight:800;
+    font-size:15px;
+    cursor:pointer;
+  }
+  .trat-edit-hint{
+    font-weight:600;
+    font-size:13px;
+    opacity:0.75;
+  }
+  .item-card.collapsed{
+    border:none;
+    padding:0;
+    background:transparent;
+  }
+  .item-card.collapsed .remove-btn{
+    display:none;
+  }
+  .item-card.collapsed .trat-fields{
+    display:none;
+  }
+  .item-card.collapsed .trat-collapsed-btn{
+    display:flex;
+  }
   .add-btn{
     width:100%;
     padding:18px;
@@ -268,6 +310,39 @@
     margin-top:6px;
   }
   .add-btn:active{background:var(--mid-green);}
+  .add-btn:disabled{
+    background:#ccc;
+    color:#888;
+    cursor:not-allowed;
+  }
+  .mix-input-wrap{
+    position:relative;
+  }
+  .mix-input-wrap input{
+    padding-right:54px;
+  }
+  .mix-stepper{
+    position:absolute;
+    right:6px;
+    top:6px;
+    bottom:6px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .mix-stepper button{
+    flex:1;
+    width:40px;
+    border:none;
+    border-radius:6px;
+    background:var(--light-green);
+    color:#fff;
+    font-size:13px;
+    font-weight:900;
+    cursor:pointer;
+    line-height:1;
+  }
+  .mix-stepper button:active{background:var(--mid-green);}
   .add-btn-top{margin-bottom:16px;margin-top:0;}
 
   /* URGENCY BUTTONS (genérico, cores aplicadas por nível) */
@@ -308,34 +383,6 @@
     color:var(--text);
   }
   .status-btn.selected{background:var(--dark-green);color:#fff;border-color:var(--dark-green);}
-
-  /* PASTO CHECKLIST (multi-seleção com busca) */
-  .pasto-search{margin-bottom:8px;}
-  .pasto-checklist{
-    max-height:220px;
-    overflow-y:auto;
-    border:2px solid var(--accent);
-    border-radius:10px;
-    padding:8px;
-    background:#fff;
-  }
-  .pasto-checklist label{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px;
-    border-radius:8px;
-    font-size:14px;
-    cursor:pointer;
-  }
-  .pasto-checklist label:has(input:checked){
-    background:var(--pale-green);
-    font-weight:700;
-    color:var(--dark-green);
-  }
-  .pasto-checklist input[type="checkbox"]{
-    width:22px;height:22px;accent-color:var(--dark-green);flex-shrink:0;
-  }
 
   /* DOSE GRID (vacinas) */
   .dose-grid{
@@ -489,6 +536,7 @@
         <label class="checkbox-card"><input type="checkbox" id="bvNascimento"><span class="cb-icon">🐣</span><span>Nascimento</span></label>
         <label class="checkbox-card"><input type="checkbox" id="bvAborto"><span class="cb-icon">⚠️</span><span>Aborto / Natimorto</span></label>
         <label class="checkbox-card"><input type="checkbox" id="bvMorte"><span class="cb-icon">💀</span><span>Morreu animal</span></label>
+        <label class="checkbox-card"><input type="checkbox" id="bvNenhuma"><span class="cb-icon">🚫</span><span>Nenhuma das atividades</span></label>
       </div>
     </section>
 
@@ -527,8 +575,8 @@
         </div>
         <div class="field">
           <label>📍 Em qual(is) pasto(s) está a diferença?</label>
-          <input type="text" id="pastoSearch2" class="pasto-search" placeholder="🔍 Filtrar pasto..." oninput="filtrarPastos('pastoList2', this.value)">
-          <div class="pasto-checklist" id="pastoList2"></div>
+          <p class="hint">Toque e segure (ou deslize) para selecionar mais de um pasto.</p>
+          <select id="pastoList2" class="pasto-select-multi" multiple size="6"></select>
         </div>
       </div>
 
@@ -549,7 +597,7 @@
       </div>
 
       <div id="tratamentosList"></div>
-      <button type="button" class="add-btn" onclick="addTratamento()">➕ Adicionar Tratamento</button>
+      <button type="button" class="add-btn" id="btnAddTratamento" onclick="addTratamento()">➕ Adicionar Tratamento</button>
     </section>
 
     <!-- ============ SEÇÃO 4: VACINAS E VERMÍFUGOS ============ -->
@@ -563,7 +611,7 @@
       </div>
 
       <div id="vacinasList"></div>
-      <button type="button" class="add-btn" onclick="addVacina()">➕ Adicionar Aplicação</button>
+      <button type="button" class="add-btn" id="btnAddVacina" onclick="addVacina()">➕ Adicionar Aplicação</button>
     </section>
 
     <!-- ============ SEÇÃO 5: ATIVIDADES NO CURRAL ============ -->
@@ -635,7 +683,7 @@
 
       <div id="misturaDetails" style="display:none;">
         <div id="misturasList"></div>
-        <button type="button" class="add-btn" onclick="addMistura()">➕ Adicionar Mistura</button>
+        <button type="button" class="add-btn" id="btnAddMistura" onclick="addMistura()">➕ Adicionar Mistura</button>
       </div>
     </section>
 
@@ -763,6 +811,8 @@
 
   const CATEGORIAS_ANIMAL = ['Bezerros 0–7m','Bezerros 8–12m','Novilhas 13–24m','Garrotes 13–24m','Vacas','Bois'];
 
+  const VACINA_PRODUTOS = ['Raiva','Mal de Ano','Brucelose','Aftosa','Reprodutiva','Pneumonia'];
+
   // ===================== CONFIG GERAL =====================
   const totalSections = 9;
   const sectionNames = ["Identificação","Conferência de Rebanho","Sanidade Animal","Vacinas e Vermífugos","Atividades no Curral","Nutrição e Misturas","Infraestrutura","Solicitações de Produtos","Fechamento"];
@@ -774,12 +824,10 @@
   document.addEventListener('DOMContentLoaded', () => {
     setDataAtual();
     setupFazendaButtons();
+    setupBoiVirtual();
     setupConferiuButtons();
     setupBinaryButtons();
     setupTotaisRebanho();
-    addTratamento();
-    addVacina();
-    addMistura();
     addProduto();
     populateCurralCategorias();
     setupNav();
@@ -841,13 +889,136 @@
     document.getElementById('btnNext').textContent = currentSection === totalSections ? '✅ Finalizar' : 'Próximo ➡';
   }
 
+  function highlightField(el){
+    if(!el) return;
+    el.classList.add('field-error');
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    if(typeof el.focus === 'function' && el.tagName !== 'SELECT') el.focus();
+    const clear = () => el.classList.remove('field-error');
+    el.addEventListener('input', clear, {once:true});
+    el.addEventListener('change', clear, {once:true});
+    el.addEventListener('click', clear, {once:true});
+  }
+
   function validateSection(n){
     if(n === 1){
       const fazenda = document.querySelector('.fazenda-btn.selected');
-      const responsavel = document.getElementById('responsavel').value;
-      if(!fazenda || !responsavel){
-        alert('⚠️ Por favor, selecione a fazenda e o responsável antes de continuar.');
+      if(!fazenda){
+        alert('⚠️ Por favor, selecione a fazenda.');
+        highlightField(document.querySelector('.fazenda-btn').parentElement);
         return false;
+      }
+      const responsavel = document.getElementById('responsavel');
+      if(!responsavel.value){
+        alert('⚠️ Por favor, selecione o responsável.');
+        highlightField(responsavel);
+        return false;
+      }
+      const bvIds = ['bvChoveu','bvMudei','bvNutricao','bvNascimento','bvAborto','bvMorte','bvNenhuma'];
+      const algumaMarcada = bvIds.some(id => document.getElementById(id).checked);
+      if(!algumaMarcada){
+        alert('⚠️ Em "Boi Virtual — Atividades do dia", marque ao menos uma opção (ou "Nenhuma das atividades").');
+        highlightField(document.getElementById('bvChoveu').closest('.field'));
+        return false;
+      }
+    }
+    if(n === 2){
+      const conferiu = document.querySelector('.conferiu-btn.selected');
+      if(!conferiu){
+        alert('⚠️ Por favor, informe se conferiu o gado.');
+        highlightField(document.querySelector('.conferiu-btn').parentElement);
+        return false;
+      }
+      if(conferiu.dataset.value === 'todo' || conferiu.dataset.value === 'parte'){
+        const esperado = document.getElementById('totalEsperado2');
+        const encontrado = document.getElementById('totalEncontrado2');
+        if(esperado.value === ''){
+          alert('⚠️ Por favor, preencha o Total de animais Esperado.');
+          highlightField(esperado);
+          return false;
+        }
+        if(encontrado.value === ''){
+          alert('⚠️ Por favor, preencha o Total de animais Encontrado.');
+          highlightField(encontrado);
+          return false;
+        }
+        if(Number(esperado.value) !== Number(encontrado.value)){
+          const pastoSel = document.getElementById('pastoList2');
+          if(pastoSel.selectedOptions.length === 0){
+            alert('⚠️ Por favor, selecione o(s) pasto(s) onde está a diferença.');
+            highlightField(pastoSel);
+            return false;
+          }
+        }
+      }
+    }
+    if(n === 3){
+      const tratCards = document.querySelectorAll('#tratamentosList .item-card');
+      for(const card of tratCards){
+        const campos = [
+          {el: card.querySelector('.trat-animal'), label: 'Identificação do Animal'},
+          {el: card.querySelector('.trat-problema'), label: 'Problema / Sintoma'},
+          {el: card.querySelector('.trat-aplicado'), label: 'Tratamento Aplicado'},
+          {el: card.querySelector('.trat-responsavel'), label: 'Responsável'}
+        ];
+        const vazio = campos.find(c => !c.el.value.trim());
+        if(vazio){
+          const titulo = card.querySelector('.item-title').textContent;
+          card.classList.remove('collapsed');
+          document.getElementById('btnAddTratamento').disabled = true;
+          alert(`⚠️ Preencha o campo "${vazio.label}" do ${titulo}.`);
+          highlightField(vazio.el);
+          return false;
+        }
+        if(!card.classList.contains('collapsed')){
+          card.classList.add('collapsed');
+          document.getElementById('btnAddTratamento').disabled = false;
+        }
+      }
+    }
+    if(n === 4){
+      const vacCards = document.querySelectorAll('#vacinasList .item-card');
+      for(const card of vacCards){
+        const campos = [
+          {el: card.querySelector('.vac-produto'), label: 'Nome do Produto'},
+          {el: card.querySelector('.vac-qtd'), label: 'Quantidade de Animais'},
+          {el: card.querySelector('.vac-categoria'), label: 'Categoria Animal'}
+        ];
+        const vazio = campos.find(c => !c.el.value.trim());
+        if(vazio){
+          const titulo = card.querySelector('.item-title').textContent;
+          card.classList.remove('collapsed');
+          document.getElementById('btnAddVacina').disabled = true;
+          alert(`⚠️ Preencha o campo "${vazio.label}" da ${titulo}.`);
+          highlightField(vazio.el);
+          return false;
+        }
+        if(!card.classList.contains('collapsed')){
+          card.classList.add('collapsed');
+          document.getElementById('btnAddVacina').disabled = false;
+        }
+      }
+    }
+    if(n === 6){
+      const mixSim = document.querySelector('.binary-btn[data-group="mistura"][data-value="sim"].selected');
+      if(mixSim){
+        const mixCards = document.querySelectorAll('#misturasList .item-card');
+        for(const card of mixCards){
+          const campos = MIX_CAMPOS.map(c => ({el: card.querySelector('.' + c.cls), label: c.label}));
+          const vazio = campos.find(c => c.el.value.trim() === '');
+          if(vazio){
+            const titulo = card.querySelector('.item-title').textContent;
+            card.classList.remove('collapsed');
+            document.getElementById('btnAddMistura').disabled = true;
+            alert(`⚠️ Preencha o campo "${vazio.label}" da ${titulo}.`);
+            highlightField(vazio.el);
+            return false;
+          }
+          if(!card.classList.contains('collapsed')){
+            card.classList.add('collapsed');
+            document.getElementById('btnAddMistura').disabled = false;
+          }
+        }
       }
     }
     return true;
@@ -873,7 +1044,21 @@
           const tipo = card.querySelector('.manut-tipo').value;
           if(tipo !== 'Maquina') populatePastoSelect(s);
         });
+        document.querySelectorAll('.trat-responsavel').forEach(populateTratResponsavel);
       });
+    });
+  }
+
+  function setupBoiVirtual(){
+    const bvIds = ['bvChoveu','bvMudei','bvNutricao','bvNascimento','bvAborto','bvMorte'];
+    const nenhuma = document.getElementById('bvNenhuma');
+    bvIds.forEach(id => {
+      document.getElementById(id).addEventListener('change', function(){
+        if(this.checked) nenhuma.checked = false;
+      });
+    });
+    nenhuma.addEventListener('change', function(){
+      if(this.checked) bvIds.forEach(id => document.getElementById(id).checked = false);
     });
   }
 
@@ -911,15 +1096,8 @@
   function renderPastoChecklist2(){
     const c = document.getElementById('pastoList2');
     c.innerHTML = (PASTOS[currentFazenda] || []).map(p =>
-      `<label><input type="checkbox" class="pasto2-check" value="${p}"> ${p}</label>`
+      `<option value="${p}">${p}</option>`
     ).join('');
-  }
-
-  function filtrarPastos(containerId, term){
-    term = term.toLowerCase();
-    document.querySelectorAll('#'+containerId+' label').forEach(l => {
-      l.style.display = l.textContent.toLowerCase().includes(term) ? '' : 'none';
-    });
   }
 
   function populatePastoSelect(select){
@@ -933,23 +1111,75 @@
   let tratamentoCount = 0;
   function addTratamento(){
     tratamentoCount++;
-    const id = 'trat' + tratamentoCount;
+    const n = tratamentoCount;
+    const id = 'trat' + n;
     const div = document.createElement('div');
     div.className = 'item-card';
     div.id = id;
     div.innerHTML = `
       <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
-      <div class="item-title">🩺 Tratamento ${tratamentoCount}</div>
-      <div class="field"><label>Identificação do Animal (brinco/nº)</label><input type="text" class="trat-animal" placeholder="Ex: 245"></div>
-      <div class="field"><label>Problema / Sintoma</label><input type="text" class="trat-problema" placeholder="Ex: Ferida na pata"></div>
-      <div class="field"><label>Tratamento Aplicado</label><input type="text" class="trat-aplicado" placeholder="Ex: Pomada cicatrizante"></div>
-      <div class="field" style="margin-bottom:0;"><label>Responsável</label><input type="text" class="trat-responsavel" placeholder="Nome do responsável"></div>
+      <div class="trat-collapsed-btn" onclick="reabrirTratamento('${id}')">
+        <span>✅ Tratamento <span class="trat-num"></span></span><span class="trat-edit-hint">✏️ Toque para editar</span>
+      </div>
+      <div class="trat-fields">
+        <div class="item-title">🩺 Tratamento <span class="trat-num"></span></div>
+        <div class="field"><label>Identificação do Animal (brinco/nº)</label><input type="text" class="trat-animal" placeholder="Ex: 245"></div>
+        <div class="field"><label>Problema / Sintoma</label><input type="text" class="trat-problema" placeholder="Ex: Ferida na pata"></div>
+        <div class="field"><label>Tratamento Aplicado</label><input type="text" class="trat-aplicado" placeholder="Ex: Pomada cicatrizante"></div>
+        <div class="field" style="margin-bottom:0;"><label>Responsável</label><select class="trat-responsavel"></select></div>
+      </div>
     `;
     document.getElementById('tratamentosList').appendChild(div);
+    renumberTratamentos();
+    populateTratResponsavel(div.querySelector('.trat-responsavel'));
+
+    const checarConclusao = () => {
+      const animal = div.querySelector('.trat-animal').value.trim();
+      const problema = div.querySelector('.trat-problema').value.trim();
+      const aplicado = div.querySelector('.trat-aplicado').value.trim();
+      const responsavel = div.querySelector('.trat-responsavel').value.trim();
+      if(animal && problema && aplicado && responsavel){
+        div.classList.add('collapsed');
+        document.getElementById('btnAddTratamento').disabled = false;
+      }
+    };
+    div.querySelector('.trat-responsavel').addEventListener('change', checarConclusao);
+    div.querySelector('.trat-responsavel').addEventListener('blur', checarConclusao);
+
+    document.getElementById('btnAddTratamento').disabled = true;
+  }
+
+  function populateTratResponsavel(select){
+    const current = select.value;
+    select.innerHTML = '<option value="">Selecione...</option>' +
+      (EQUIPE[currentFazenda] || []).map(nome => `<option value="${nome}">${nome}</option>`).join('') +
+      '<option value="Outro">Outro</option>';
+    if(current) select.value = current;
+  }
+
+  function reabrirTratamento(id){
+    document.getElementById(id).classList.remove('collapsed');
+    document.getElementById('btnAddTratamento').disabled = true;
+  }
+
+  function renumberTratamentos(){
+    document.querySelectorAll('#tratamentosList .item-card').forEach((card, i) => {
+      card.querySelectorAll('.trat-num').forEach(el => el.textContent = i + 1);
+    });
   }
 
   // ===================== SEÇÃO 4: VACINAS E VERMÍFUGOS =====================
   let vacinaCount = 0;
+  function vacProdutoFieldHTML(tipo){
+    if(tipo === 'Vermífugo'){
+      return `<input type="text" class="vac-produto" placeholder="Ex: Ivermectina">`;
+    }
+    return `<select class="vac-produto">
+      <option value="">— selecione —</option>
+      ${VACINA_PRODUTOS.map(p => `<option value="${p}">${p}</option>`).join('')}
+    </select>`;
+  }
+
   function addVacina(){
     vacinaCount++;
     const id = 'vac' + vacinaCount;
@@ -958,25 +1188,75 @@
     div.id = id;
     div.innerHTML = `
       <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
-      <div class="item-title">💉 Aplicação ${vacinaCount}</div>
-      <div class="field">
-        <label>Tipo</label>
-        <select class="vac-tipo">
-          <option value="Vacina">Vacina</option>
-          <option value="Vermífugo">Vermífugo</option>
-        </select>
+      <div class="trat-collapsed-btn" onclick="reabrirVacina('${id}')">
+        <span>✅ Aplicação <span class="vac-num"></span></span><span class="trat-edit-hint">✏️ Toque para editar</span>
       </div>
-      <div class="field"><label>Nome do Produto</label><input type="text" class="vac-produto" placeholder="Ex: Aftosa, Ivermectina"></div>
-      <div class="field"><label>Quantidade de Animais</label><input type="number" min="0" class="vac-qtd" placeholder="0"></div>
-      <div class="field" style="margin-bottom:0;">
-        <label>Categoria Animal</label>
-        <select class="vac-categoria">
-          <option value="">— selecione —</option>
-          ${CATEGORIAS_ANIMAL.map(c => `<option value="${c}">${c}</option>`).join('')}
-        </select>
+      <div class="trat-fields">
+        <div class="item-title">💉 Aplicação <span class="vac-num"></span></div>
+        <div class="field">
+          <label>Tipo</label>
+          <select class="vac-tipo">
+            <option value="Vacina">Vacina</option>
+            <option value="Vermífugo">Vermífugo</option>
+          </select>
+        </div>
+        <div class="field vac-produto-wrap">
+          <label>Nome do Produto</label>
+          ${vacProdutoFieldHTML('Vacina')}
+        </div>
+        <div class="field"><label>Quantidade de Animais</label><input type="number" min="0" class="vac-qtd" placeholder="0"></div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Categoria Animal</label>
+          <select class="vac-categoria">
+            <option value="">— selecione —</option>
+            ${CATEGORIAS_ANIMAL.map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </div>
       </div>
     `;
     document.getElementById('vacinasList').appendChild(div);
+    renumberVacinas();
+
+    const checarConclusao = () => {
+      const produto = div.querySelector('.vac-produto').value.trim();
+      const qtd = div.querySelector('.vac-qtd').value;
+      const categoria = div.querySelector('.vac-categoria').value;
+      if(produto && qtd !== '' && categoria){
+        div.classList.add('collapsed');
+        document.getElementById('btnAddVacina').disabled = false;
+      }
+    };
+
+    div.querySelector('.vac-tipo').addEventListener('change', () => {
+      const wrap = div.querySelector('.vac-produto-wrap');
+      wrap.innerHTML = `<label>Nome do Produto</label>${vacProdutoFieldHTML(div.querySelector('.vac-tipo').value)}`;
+      bindProdutoListeners();
+      checarConclusao();
+    });
+
+    function bindProdutoListeners(){
+      const produtoEl = div.querySelector('.vac-produto');
+      produtoEl.addEventListener('change', checarConclusao);
+      produtoEl.addEventListener('blur', checarConclusao);
+    }
+    bindProdutoListeners();
+
+    div.querySelector('.vac-qtd').addEventListener('change', checarConclusao);
+    div.querySelector('.vac-qtd').addEventListener('blur', checarConclusao);
+    div.querySelector('.vac-categoria').addEventListener('change', checarConclusao);
+
+    document.getElementById('btnAddVacina').disabled = true;
+  }
+
+  function reabrirVacina(id){
+    document.getElementById(id).classList.remove('collapsed');
+    document.getElementById('btnAddVacina').disabled = true;
+  }
+
+  function renumberVacinas(){
+    document.querySelectorAll('#vacinasList .item-card').forEach((card, i) => {
+      card.querySelectorAll('.vac-num').forEach(el => el.textContent = i + 1);
+    });
   }
 
   // ===================== BINARY (SIM/NÃO) =====================
@@ -1002,23 +1282,90 @@
 
   // ===================== SEÇÃO 6: NUTRIÇÃO E MISTURAS =====================
   let misturaCount = 0;
+  const MIX_CAMPOS = [
+    {cls: 'mix-salbranco', label: 'Sal Branco (kg)'},
+    {cls: 'mix-mineral', label: 'Sal Mineral 160 (kg)'},
+    {cls: 'mix-fuba', label: 'Fubá (kg)'},
+    {cls: 'mix-ureia', label: 'Ureia (kg)'},
+    {cls: 'mix-soja', label: 'Soja (kg)'},
+    {cls: 'mix-promil', label: 'Promil (kg)'}
+  ];
+
+  function mixFieldHTML(campo, last){
+    return `
+      <div class="field"${last ? ' style="margin-bottom:0;"' : ''}>
+        <label>${campo.label}</label>
+        <div class="mix-input-wrap">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="${campo.cls}" placeholder="0">
+          <div class="mix-stepper">
+            <button type="button" tabindex="-1" onclick="mixStep(this,25)">▲</button>
+            <button type="button" tabindex="-1" onclick="mixStep(this,-25)">▼</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function addMistura(){
     misturaCount++;
-    const id = 'mix' + misturaCount;
+    const n = misturaCount;
+    const id = 'mix' + n;
     const div = document.createElement('div');
     div.className = 'item-card';
     div.id = id;
     div.innerHTML = `
       <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
-      <div class="item-title">🌾 Mistura ${misturaCount}</div>
-      <div class="field"><label>Sal Branco (kg)</label><input type="number" min="0" step="0.1" class="mix-salbranco" placeholder="0"></div>
-      <div class="field"><label>Sal Mineral 160 (kg)</label><input type="number" min="0" step="0.1" class="mix-mineral" placeholder="0"></div>
-      <div class="field"><label>Fubá (kg)</label><input type="number" min="0" step="0.1" class="mix-fuba" placeholder="0"></div>
-      <div class="field"><label>Ureia (kg)</label><input type="number" min="0" step="0.1" class="mix-ureia" placeholder="0"></div>
-      <div class="field"><label>Soja (kg)</label><input type="number" min="0" step="0.1" class="mix-soja" placeholder="0"></div>
-      <div class="field" style="margin-bottom:0;"><label>Promil (kg)</label><input type="number" min="0" step="0.1" class="mix-promil" placeholder="0"></div>
+      <div class="trat-collapsed-btn" onclick="reabrirMistura('${id}')">
+        <span>✅ Mistura <span class="mix-num"></span></span><span class="trat-edit-hint">✏️ Toque para editar</span>
+      </div>
+      <div class="trat-fields">
+        <div class="item-title">🌾 Mistura <span class="mix-num"></span></div>
+        ${MIX_CAMPOS.map(c => mixFieldHTML(c, false)).join('')}
+        <button type="button" class="add-btn mix-concluir-btn" style="margin-top:14px;" disabled>✅ Concluir Mistura</button>
+      </div>
     `;
     document.getElementById('misturasList').appendChild(div);
+    renumberMisturas();
+
+    const concluirBtn = div.querySelector('.mix-concluir-btn');
+
+    const checarCompleto = () => {
+      const completo = MIX_CAMPOS.every(c => div.querySelector('.' + c.cls).value.trim() !== '');
+      concluirBtn.disabled = !completo;
+    };
+
+    div.querySelectorAll('.mix-input-wrap input').forEach(input => {
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/[^0-9]/g, '').slice(0, 4);
+        checarCompleto();
+      });
+    });
+
+    concluirBtn.addEventListener('click', () => {
+      div.classList.add('collapsed');
+      document.getElementById('btnAddMistura').disabled = false;
+    });
+
+    document.getElementById('btnAddMistura').disabled = true;
+  }
+
+  function mixStep(btn, delta){
+    const input = btn.closest('.mix-input-wrap').querySelector('input');
+    let val = parseInt(input.value || '0', 10);
+    if(isNaN(val)) val = 0;
+    val = Math.min(9999, Math.max(0, val + delta));
+    input.value = String(val);
+    input.dispatchEvent(new Event('input', {bubbles:true}));
+  }
+
+  function reabrirMistura(id){
+    document.getElementById(id).classList.remove('collapsed');
+    document.getElementById('btnAddMistura').disabled = true;
+  }
+
+  function renumberMisturas(){
+    document.querySelectorAll('#misturasList .item-card').forEach((card, i) => {
+      card.querySelectorAll('.mix-num').forEach(el => el.textContent = i + 1);
+    });
   }
 
   // ===================== SEÇÃO 7: INFRAESTRUTURA =====================
@@ -1200,7 +1547,24 @@
   // ===================== UTIL =====================
   function removeItem(id){
     const el = document.getElementById(id);
-    if(el) el.remove();
+    if(!el) return;
+    const parentId = el.parentElement && el.parentElement.id;
+    el.remove();
+    if(parentId === 'tratamentosList'){
+      renumberTratamentos();
+      const aberto = document.querySelector('#tratamentosList .item-card:not(.collapsed)');
+      document.getElementById('btnAddTratamento').disabled = !!aberto;
+    }
+    if(parentId === 'vacinasList'){
+      renumberVacinas();
+      const aberto = document.querySelector('#vacinasList .item-card:not(.collapsed)');
+      document.getElementById('btnAddVacina').disabled = !!aberto;
+    }
+    if(parentId === 'misturasList'){
+      renumberMisturas();
+      const aberto = document.querySelector('#misturasList .item-card:not(.collapsed)');
+      document.getElementById('btnAddMistura').disabled = !!aberto;
+    }
   }
 
   // ===================== GERAR RESUMO =====================
@@ -1229,7 +1593,7 @@
     r += `Total Encontrado: ${document.getElementById('totalEncontrado2').value || '0'}\n`;
     if(document.getElementById('divergDetails').style.display !== 'none'){
       r += `Faltaram: ${document.getElementById('qtdFaltou').value}\n`;
-      const pastosDiv = Array.from(document.querySelectorAll('.pasto2-check:checked')).map(c => c.value);
+      const pastosDiv = Array.from(document.getElementById('pastoList2').selectedOptions).map(o => o.value);
       r += `Pasto(s) com diferença: ${pastosDiv.length ? pastosDiv.join(', ') : 'Não informado'}\n`;
     }
     const obsRebanho = document.getElementById('obsRebanho').value;
