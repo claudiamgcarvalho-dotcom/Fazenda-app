@@ -5,15 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Resumo Diário da Fazenda</title>
 <style>
+  @font-face{font-family:'FuturaStd';src:url('FuturaStd-Light.otf') format('opentype');font-weight:300;font-style:normal;}
+  @font-face{font-family:'FuturaStd';src:url('FuturaStd-Book.otf') format('opentype');font-weight:400;font-style:normal;}
+  @font-face{font-family:'FuturaStd';src:url('FuturaStd-Medium.otf') format('opentype');font-weight:600;font-style:normal;}
+  @font-face{font-family:'FuturaStd';src:url('FuturaStd-Bold.otf') format('opentype');font-weight:700;font-style:normal;}
+
   :root{
-    --dark-green:#1B4332;
-    --mid-green:#2D6A4F;
-    --light-green:#40916C;
-    --pale-green:#D8F3DC;
-    --accent:#95D5B2;
+    --dark-green:#688A7E;
+    --mid-green:#4A6860;
+    --light-green:#1A78C2;
+    --pale-green:#EEEEEE;
+    --accent:#B8CECA;
     --white:#FFFFFF;
-    --text:#1B1B1B;
-    --gray:#6c757d;
+    --text:#797979;
+    --gray:#9AA5AB;
     --baixa:#52B788;
     --media:#FFC300;
     --alta:#F77F00;
@@ -21,7 +26,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   body{
-    font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    font-family:'FuturaStd','Segoe UI',Roboto,Arial,sans-serif;
     background:var(--pale-green);
     color:var(--text);
     line-height:1.4;
@@ -37,7 +42,7 @@
   }
   /* HEADER / PROGRESS */
   .app-header{
-    background:var(--dark-green);
+    background:#394A59;
     padding:16px 16px 12px;
     position:sticky;
     top:0;
@@ -93,9 +98,9 @@
     line-height:1;
   }
   .section-header h2{
-    color:var(--dark-green);
+    color:var(--mid-green);
     font-size:21px;
-    font-weight:800;
+    font-weight:700;
   }
   .section-sub{
     color:var(--gray);
@@ -120,7 +125,14 @@
     border-radius:10px;
     font-family:inherit;
     background:#fff;
-    color:var(--text);
+    color:#3A3A3A;
+    box-sizing:border-box;
+    max-width:100%;
+  }
+  input[type="date"]{
+    padding-right:8px;
+    -webkit-appearance:none;
+    appearance:none;
   }
   input:focus, select:focus, textarea:focus{
     border-color:var(--light-green);
@@ -180,9 +192,9 @@
     text-align:center;
   }
   .choice-btn.selected{
-    background:var(--dark-green);
+    background:#1A78C2;
     color:#fff;
-    border-color:var(--dark-green);
+    border-color:#1A78C2;
     transform:scale(1.03);
   }
 
@@ -199,8 +211,8 @@
     color:var(--gray);
   }
   .binary-btn[data-value="sim"].selected{
-    background:var(--alta);
-    border-color:var(--alta);
+    background:#1A78C2;
+    border-color:#1A78C2;
     color:#fff;
   }
   .binary-btn[data-value="nao"].selected{
@@ -231,12 +243,13 @@
   .checkbox-card input[type="checkbox"]{
     width:26px;
     height:26px;
-    accent-color:var(--dark-green);
+    accent-color:#1A78C2;
     flex-shrink:0;
   }
   .checkbox-card:has(input:checked){
-    background:var(--pale-green);
-    border-color:var(--dark-green);
+    background:#E8F3FB;
+    border-color:#1A78C2;
+    color:#1A78C2;
   }
 
   /* DYNAMIC ITEM CARDS */
@@ -258,7 +271,7 @@
     position:absolute;
     top:-10px;
     right:-10px;
-    background:var(--urgente);
+    background:#394A59;
     color:#fff;
     border:3px solid #fff;
     border-radius:50%;
@@ -321,7 +334,7 @@
   .btn-confirmar{
     width:100%;
     padding:13px;
-    background:var(--dark-green);
+    background:#4CAF50;
     color:#fff;
     border:none;
     border-radius:12px;
@@ -353,17 +366,21 @@
   }
   .mix-stepper button{
     flex:1;
-    width:40px;
+    width:32px;
     border:none;
-    border-radius:6px;
-    background:var(--light-green);
-    color:#fff;
-    font-size:13px;
-    font-weight:900;
+    background:transparent;
+    color:#394A59;
+    font-size:11px;
     cursor:pointer;
     line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    opacity:0.75;
   }
-  .mix-stepper button:active{background:var(--mid-green);}
+  .mix-stepper button:active{opacity:1;}
+  .mix-stepper button svg{display:block;}
   .add-btn-top{margin-bottom:16px;margin-top:0;}
 
   /* URGENCY BUTTONS (genérico, cores aplicadas por nível) */
@@ -435,7 +452,7 @@
     text-align:center;
     color:var(--text);
   }
-  .attend-btn.selected{background:var(--dark-green);color:#fff;border-color:var(--dark-green);}
+  .attend-btn.selected{background:#1A78C2;color:#fff;border-color:#1A78C2;}
 
   /* CAMPOS DE HORA (lado a lado) */
   .half-fields{display:flex;gap:10px;}
@@ -466,9 +483,9 @@
     border-radius:12px;
     cursor:pointer;
   }
-  .btn-primary{background:var(--dark-green);color:#fff;}
-  .btn-secondary{background:#e9ecef;color:var(--dark-green);}
-  .btn-primary:active{background:var(--mid-green);}
+  .btn-primary{background:#1A78C2;color:#fff;}
+  .btn-secondary{background:#e9ecef;color:#394A59;}
+  .btn-primary:active{background:#145F9E;}
 
   /* SUMMARY */
   #summarySection .summary-icon{
@@ -479,7 +496,7 @@
   }
   #summarySection h2{
     text-align:center;
-    color:var(--dark-green);
+    color:#394A59;
     margin-bottom:20px;
   }
   #reportText{
@@ -505,7 +522,7 @@
   }
   .btn-whatsapp{background:#25D366;color:#fff;}
   .btn-copy{background:var(--light-green);color:#fff;}
-  .btn-new{background:var(--dark-green);color:#fff;}
+  .btn-new{background:#394A59;color:#fff;}
 </style>
 </head>
 <body>
@@ -1496,8 +1513,8 @@
         <div class="mix-input-wrap">
           <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="${campo.cls}" placeholder="0">
           <div class="mix-stepper">
-            <button type="button" tabindex="-1" onclick="mixStep(this,25)">▲</button>
-            <button type="button" tabindex="-1" onclick="mixStep(this,-25)">▼</button>
+            <button type="button" tabindex="-1" onclick="mixStep(this,25)"><svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="1,9 8,1 15,9" stroke="#394A59" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button type="button" tabindex="-1" onclick="mixStep(this,-25)"><svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="1,1 8,9 15,1" stroke="#394A59" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>
         </div>
       </div>`;
