@@ -126,7 +126,7 @@
     border-color:var(--light-green);
     outline:none;
   }
-  input.field-error, select.field-error, textarea.field-error{
+  input.field-error, select.field-error, textarea.field-error, button.field-error{
     border-color:var(--urgente) !important;
     box-shadow:0 0 0 3px rgba(230,57,70,0.15);
   }
@@ -153,6 +153,14 @@
     font-size:12px;
     color:var(--gray);
     margin-bottom:10px;
+  }
+  .multi-preview{
+    font-size:12px;
+    color:var(--dark-green);
+    margin-top:6px;
+    font-style:italic;
+    min-height:16px;
+    word-break:break-word;
   }
 
   /* CHOICE BUTTONS */
@@ -310,6 +318,19 @@
     margin-top:6px;
   }
   .add-btn:active{background:var(--mid-green);}
+  .btn-confirmar{
+    width:100%;
+    padding:13px;
+    background:var(--dark-green);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:12px;
+  }
+  .btn-confirmar:active{opacity:0.85;}
   .add-btn:disabled{
     background:#ccc;
     color:#888;
@@ -383,6 +404,7 @@
     color:var(--text);
   }
   .status-btn.selected{background:var(--dark-green);color:#fff;border-color:var(--dark-green);}
+  .status-btn:disabled{opacity:0.35;cursor:not-allowed;}
 
   /* DOSE GRID (vacinas) */
   .dose-grid{
@@ -560,12 +582,12 @@
       </div>
 
       <div class="field">
-        <label>🔢 Total de animais Esperado</label>
-        <input type="number" min="0" id="totalEsperado2" placeholder="0">
+        <label>🔢 Total de animais <strong>ESPERADOS</strong></label>
+        <input type="number" min="0" inputmode="numeric" id="totalEsperado2" placeholder="0">
       </div>
       <div class="field">
-        <label>🔢 Total de animais Encontrado</label>
-        <input type="number" min="0" id="totalEncontrado2" placeholder="0">
+        <label>🔢 Total de animais <strong>ENCONTRADOS</strong></label>
+        <input type="number" min="0" inputmode="numeric" id="totalEncontrado2" placeholder="0">
       </div>
 
       <div id="divergDetails" style="display:none;">
@@ -577,6 +599,7 @@
           <label>📍 Em qual(is) pasto(s) está a diferença?</label>
           <p class="hint">Toque e segure (ou deslize) para selecionar mais de um pasto.</p>
           <select id="pastoList2" class="pasto-select-multi" multiple size="6"></select>
+          <div class="multi-preview" id="pastoPreview">Nenhum selecionado</div>
         </div>
       </div>
 
@@ -596,8 +619,18 @@
         </div>
       </div>
 
-      <div id="tratamentosList"></div>
-      <button type="button" class="add-btn" id="btnAddTratamento" onclick="addTratamento()">➕ Adicionar Tratamento</button>
+      <div class="field">
+        <label>Houve tratamento de animal hoje?</label>
+        <div class="btn-group">
+          <button type="button" class="binary-btn" data-group="trat" data-value="sim">✅ Sim</button>
+          <button type="button" class="binary-btn" data-group="trat" data-value="nao">❌ Não</button>
+        </div>
+      </div>
+
+      <div id="tratDetails" style="display:none;">
+        <div id="tratamentosList"></div>
+        <button type="button" class="add-btn" id="btnAddTratamento" onclick="addTratamento()">➕ Adicionar Tratamento</button>
+      </div>
     </section>
 
     <!-- ============ SEÇÃO 4: VACINAS E VERMÍFUGOS ============ -->
@@ -610,8 +643,18 @@
         </div>
       </div>
 
-      <div id="vacinasList"></div>
-      <button type="button" class="add-btn" id="btnAddVacina" onclick="addVacina()">➕ Adicionar Aplicação</button>
+      <div class="field">
+        <label>Houve aplicação de vacina ou vermífugo hoje?</label>
+        <div class="btn-group">
+          <button type="button" class="binary-btn" data-group="vac" data-value="sim">✅ Sim</button>
+          <button type="button" class="binary-btn" data-group="vac" data-value="nao">❌ Não</button>
+        </div>
+      </div>
+
+      <div id="vacDetails" style="display:none;">
+        <div id="vacinasList"></div>
+        <button type="button" class="add-btn" id="btnAddVacina" onclick="addVacina()">➕ Adicionar Aplicação</button>
+      </div>
     </section>
 
     <!-- ============ SEÇÃO 5: ATIVIDADES NO CURRAL ============ -->
@@ -627,8 +670,8 @@
       <div class="field">
         <label>Teve atividade no curral hoje?</label>
         <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="curral" data-value="sim">⚠️ Sim</button>
-          <button type="button" class="binary-btn" data-group="curral" data-value="nao">✅ Não</button>
+          <button type="button" class="binary-btn" data-group="curral" data-value="sim">✅ Sim</button>
+          <button type="button" class="binary-btn" data-group="curral" data-value="nao">❌ Não</button>
         </div>
       </div>
 
@@ -649,11 +692,12 @@
           <label>Categoria(s) trabalhada(s)</label>
           <p class="hint">Toque e segure (ou deslize) para selecionar mais de uma categoria.</p>
           <select id="curralCategorias" class="curral-cat-select" multiple size="6"></select>
+          <div class="multi-preview" id="categoriasPreview">Nenhuma selecionada</div>
         </div>
 
         <div class="field">
           <label>Quantidade de animais</label>
-          <input type="number" min="0" id="curralQtd" placeholder="Ex: 45">
+          <input type="number" min="0" inputmode="numeric" id="curralQtd" placeholder="Ex: 45">
         </div>
 
         <div class="field">
@@ -676,8 +720,8 @@
       <div class="field">
         <label>Fez mistura hoje?</label>
         <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="mistura" data-value="sim">⚠️ Sim</button>
-          <button type="button" class="binary-btn" data-group="mistura" data-value="nao">✅ Não</button>
+          <button type="button" class="binary-btn" data-group="mistura" data-value="sim">✅ Sim</button>
+          <button type="button" class="binary-btn" data-group="mistura" data-value="nao">❌ Não</button>
         </div>
       </div>
 
@@ -700,14 +744,14 @@
       <div class="field">
         <label>Foi necessário alguma manutenção (conserto) hoje?</label>
         <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="infra" data-value="sim">⚠️ Sim</button>
-          <button type="button" class="binary-btn" data-group="infra" data-value="nao">✅ Não</button>
+          <button type="button" class="binary-btn" data-group="infra" data-value="sim">✅ Sim</button>
+          <button type="button" class="binary-btn" data-group="infra" data-value="nao">❌ Não</button>
         </div>
       </div>
 
       <div id="infraDetails" style="display:none;">
         <div id="manutencoesList"></div>
-        <button type="button" class="add-btn" onclick="addManutencao()">➕ Adicionar Manutenção</button>
+        <button type="button" class="add-btn" id="btnAddManutencao" onclick="addManutencao()">➕ Adicionar Manutenção</button>
       </div>
     </section>
 
@@ -724,14 +768,14 @@
       <div class="field">
         <label>Tem alguma solicitação de produto ou serviço?</label>
         <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="solic" data-value="sim">⚠️ Sim</button>
-          <button type="button" class="binary-btn" data-group="solic" data-value="nao">✅ Não</button>
+          <button type="button" class="binary-btn" data-group="solic" data-value="sim">✅ Sim</button>
+          <button type="button" class="binary-btn" data-group="solic" data-value="nao">❌ Não</button>
         </div>
       </div>
 
       <div id="solicDetails" style="display:none;">
-        <button type="button" class="add-btn add-btn-top" onclick="addProduto()">➕ Adicionar Produto</button>
         <div id="produtosList"></div>
+        <button type="button" class="add-btn" id="btnAddProduto" onclick="addProduto()">➕ Adicionar Produto</button>
       </div>
     </section>
 
@@ -768,18 +812,16 @@
 
       <div class="field">
         <label>📝 Observações gerais do dia</label>
-        <textarea id="obsGerais" placeholder="Qualquer informação importante sobre o dia de trabalho"></textarea>
+        <textarea id="obsGerais" placeholder="Qualquer informação importante sobre o dia de trabalho, ou informar se outra pessoa trabalhou"></textarea>
       </div>
     </section>
 
     <!-- ============ RESUMO FINAL ============ -->
     <section class="form-section" id="summarySection" data-section="10">
-      <span class="summary-icon">🌾</span>
       <h2>Resumo Concluído!</h2>
       <div id="reportText"></div>
       <div class="summary-actions">
         <button class="btn-whatsapp" onclick="enviarWhatsApp()">📲 Enviar pelo WhatsApp</button>
-        <button class="btn-copy" onclick="copiarResumo()">📋 Copiar Resumo</button>
         <button class="btn-new" onclick="location.reload()">🔄 Novo Registro</button>
       </div>
     </section>
@@ -807,7 +849,6 @@
     SH: ['FRENTE PLATÔ','FRENTE BURACO','FRENTE BAIXADA','FRENTE TOMBADA','PIQUETE GAMELEIRA','COLONIÃO 01','COLONIÃO 02','COLONIÃO 03','COLONIÃO 04','JOÃO BRAGA MORRO','JOÃO BRAGA BAIXADA','CURRAL 01','CURRAL 02','CURRAL FRENTE','MG5 01','MG5 02','MG5 03','MG5 04','AMOJADOR','LINDOMAR','FUNDÃO CIMA','FUNDÃO CIMA 02','FUNDÃO MEIO 01','FUNDÃO MEIO 02','FUNDÃO CANTO','CACHOEIRA MORRO','CACHOEIRA CIMA','CACHOEIRA BAIXA','B1 01','B1 02','B1 03','B1 04','B2 01','B2 02','B2 03','B2 04','TUIA 01','TUIA 02','TUIA 03','SORGO 01','SORGO 02','SORGO 03','SORGO 04','BURACÃO','FUNDO CASA REINALDO','PASTO SALEIRA','CAIXA DÁGUA','MATA SH 04','MATA SH07','REDONDEL MG5','PLANTIO NOVO','30 HECTARES']
   };
 
-  const MAQUINAS = ['Trator','Bomba','Roçadeira','Moto','Veículo','Gerador','Outro'];
 
   const CATEGORIAS_ANIMAL = ['Bezerros 0–7m','Bezerros 8–12m','Novilhas 13–24m','Garrotes 13–24m','Vacas','Bois'];
 
@@ -828,10 +869,18 @@
     setupConferiuButtons();
     setupBinaryButtons();
     setupTotaisRebanho();
-    addProduto();
     populateCurralCategorias();
     setupNav();
     updateUI();
+
+    document.getElementById('pastoList2').addEventListener('change', function(){
+      const nomes = Array.from(this.selectedOptions).map(o => o.value);
+      document.getElementById('pastoPreview').textContent = nomes.length ? nomes.join(', ') : 'Nenhum selecionado';
+    });
+    document.getElementById('curralCategorias').addEventListener('change', function(){
+      const nomes = Array.from(this.selectedOptions).map(o => o.value);
+      document.getElementById('categoriasPreview').textContent = nomes.length ? nomes.join(', ') : 'Nenhuma selecionada';
+    });
   });
 
   function populateCurralCategorias(){
@@ -953,38 +1002,61 @@
       }
     }
     if(n === 3){
-      const tratCards = document.querySelectorAll('#tratamentosList .item-card');
-      for(const card of tratCards){
-        const campos = [
-          {el: card.querySelector('.trat-animal'), label: 'Identificação do Animal'},
-          {el: card.querySelector('.trat-problema'), label: 'Problema / Sintoma'},
-          {el: card.querySelector('.trat-aplicado'), label: 'Tratamento Aplicado'},
-          {el: card.querySelector('.trat-responsavel'), label: 'Responsável'}
-        ];
-        const vazio = campos.find(c => !c.el.value.trim());
-        if(vazio){
-          const titulo = card.querySelector('.item-title').textContent;
-          card.classList.remove('collapsed');
-          document.getElementById('btnAddTratamento').disabled = true;
-          alert(`⚠️ Preencha o campo "${vazio.label}" do ${titulo}.`);
-          highlightField(vazio.el);
+      if(!document.querySelector('.binary-btn[data-group="trat"].selected')){
+        alert('⚠️ Por favor, informe se houve tratamento de animal hoje.');
+        highlightField(document.querySelector('.binary-btn[data-group="trat"]').parentElement);
+        return false;
+      }
+      if(document.querySelector('.binary-btn[data-group="trat"][data-value="sim"].selected')){
+        const tratCards = document.querySelectorAll('#tratamentosList .item-card');
+        if(tratCards.length === 0){
+          alert('⚠️ Adicione pelo menos um tratamento.');
+          highlightField(document.getElementById('btnAddTratamento'));
           return false;
         }
-        if(!card.classList.contains('collapsed')){
-          card.classList.add('collapsed');
-          document.getElementById('btnAddTratamento').disabled = false;
+        for(const card of tratCards){
+          const campos = [
+            {el: card.querySelector('.trat-animal'), label: 'Identificação do Animal'},
+            {el: card.querySelector('.trat-problema'), label: 'Problema / Sintoma'},
+            {el: card.querySelector('.trat-aplicado'), label: 'Tratamento Aplicado'},
+            {el: card.querySelector('.trat-responsavel'), label: 'Responsável'}
+          ];
+          const vazio = campos.find(c => !c.el.value.trim());
+          if(vazio){
+            const titulo = card.querySelector('.item-title').textContent;
+            card.classList.remove('collapsed');
+            document.getElementById('btnAddTratamento').disabled = true;
+            alert(`⚠️ Preencha o campo "${vazio.label}" do ${titulo}.`);
+            highlightField(vazio.el);
+            return false;
+          }
+          if(!card.classList.contains('collapsed')){
+            card.classList.add('collapsed');
+            document.getElementById('btnAddTratamento').disabled = false;
+          }
         }
       }
     }
     if(n === 4){
-      const vacCards = document.querySelectorAll('#vacinasList .item-card');
-      for(const card of vacCards){
-        const campos = [
-          {el: card.querySelector('.vac-produto'), label: 'Nome do Produto'},
-          {el: card.querySelector('.vac-qtd'), label: 'Quantidade de Animais'},
-          {el: card.querySelector('.vac-categoria'), label: 'Categoria Animal'}
-        ];
-        const vazio = campos.find(c => !c.el.value.trim());
+      if(!document.querySelector('.binary-btn[data-group="vac"].selected')){
+        alert('⚠️ Por favor, informe se houve aplicação de vacina ou vermífugo hoje.');
+        highlightField(document.querySelector('.binary-btn[data-group="vac"]').parentElement);
+        return false;
+      }
+      if(document.querySelector('.binary-btn[data-group="vac"][data-value="sim"].selected')){
+        const vacCards = document.querySelectorAll('#vacinasList .item-card');
+        if(vacCards.length === 0){
+          alert('⚠️ Adicione pelo menos uma aplicação.');
+          highlightField(document.getElementById('btnAddVacina'));
+          return false;
+        }
+        for(const card of vacCards){
+          const campos = [
+            {el: card.querySelector('.vac-produto'), label: 'Nome do Produto'},
+            {el: card.querySelector('.vac-qtd'), label: 'Quantidade de Animais'},
+            {el: card.querySelector('.vac-categoria'), label: 'Categoria Animal'}
+          ];
+          const vazio = campos.find(c => !c.el.value.trim());
         if(vazio){
           const titulo = card.querySelector('.item-title').textContent;
           card.classList.remove('collapsed');
@@ -997,12 +1069,47 @@
           card.classList.add('collapsed');
           document.getElementById('btnAddVacina').disabled = false;
         }
+        }
+      }
+    }
+    if(n === 5){
+      const curralSelecionado = document.querySelector('.binary-btn[data-group="curral"].selected');
+      if(!curralSelecionado){
+        alert('⚠️ Por favor, informe se teve atividade no curral hoje.');
+        highlightField(document.querySelector('.binary-btn[data-group="curral"]').parentElement);
+        return false;
+      }
+      if(curralSelecionado.dataset.value === 'sim'){
+        const atvIds = ['atvManejo','atvPesagem','atvSeparacao','atvProtocolo','atvDiagnostico','atvMedicamentos','atvDescorna','atvOutras'];
+        const alguma = atvIds.some(id => document.getElementById(id).checked);
+        if(!alguma){
+          alert('⚠️ Marque ao menos uma "Atividade realizada".');
+          highlightField(document.getElementById('atvManejo').closest('.field'));
+          return false;
+        }
+        const categorias = document.getElementById('curralCategorias');
+        if(categorias.selectedOptions.length === 0){
+          alert('⚠️ Selecione ao menos uma "Categoria trabalhada".');
+          highlightField(categorias);
+          return false;
+        }
       }
     }
     if(n === 6){
+      const mixSelecionado = document.querySelector('.binary-btn[data-group="mistura"].selected');
+      if(!mixSelecionado){
+        alert('⚠️ Por favor, informe se fez mistura hoje.');
+        highlightField(document.querySelector('.binary-btn[data-group="mistura"]').parentElement);
+        return false;
+      }
       const mixSim = document.querySelector('.binary-btn[data-group="mistura"][data-value="sim"].selected');
       if(mixSim){
         const mixCards = document.querySelectorAll('#misturasList .item-card');
+        if(mixCards.length === 0){
+          alert('⚠️ Adicione ao menos uma mistura clicando em "+ Adicionar Mistura".');
+          highlightField(document.getElementById('btnAddMistura'));
+          return false;
+        }
         for(const card of mixCards){
           const campos = MIX_CAMPOS.map(c => ({el: card.querySelector('.' + c.cls), label: c.label}));
           const vazio = campos.find(c => c.el.value.trim() === '');
@@ -1018,6 +1125,90 @@
             card.classList.add('collapsed');
             document.getElementById('btnAddMistura').disabled = false;
           }
+        }
+      }
+    }
+    if(n === 7){
+      if(!document.querySelector('.binary-btn[data-group="infra"].selected')){
+        alert('⚠️ Por favor, informe se foi necessário alguma manutenção hoje.');
+        highlightField(document.querySelector('.binary-btn[data-group="infra"]').parentElement);
+        return false;
+      }
+      if(document.querySelector('.binary-btn[data-group="infra"][data-value="sim"].selected')){
+        const manutCards = document.querySelectorAll('#manutencoesList .item-card');
+        if(manutCards.length === 0){
+          alert('⚠️ Adicione ao menos uma manutenção clicando em "+ Adicionar Manutenção".');
+          highlightField(document.getElementById('btnAddManutencao'));
+          return false;
+        }
+        for(const card of manutCards){
+          if(!isManutencaoCompleta(card)){
+            const titulo = card.querySelector('.item-title').textContent;
+            card.classList.remove('collapsed');
+            document.getElementById('btnAddManutencao').disabled = true;
+            const tipo = card.querySelector('.manut-tipo').value;
+            let campoFaltando = !tipo ? 'Tipo' :
+              (tipo === 'Bebedouro' && !card.querySelector('.manut-beb-btn.selected')) ? 'O que precisa ser feito' :
+              (TIPOS_COM_PASTO.includes(tipo) && card.querySelector('.manut-local').selectedOptions.length === 0) ? 'Local (pasto)' :
+              (tipo === 'Maquina' && !card.querySelector('.manut-qual-maquina').value) ? 'Qual máquina' :
+              !card.querySelector('.manut-desc').value.trim() ? 'Descrição' : 'Status';
+            alert(`⚠️ Preencha o campo "${campoFaltando}" da ${titulo}.`);
+            const elMap = {
+              'Tipo': card.querySelector('.manut-tipo'),
+              'O que precisa ser feito': card.querySelector('.manut-beb-sub'),
+              'Local (pasto)': card.querySelector('.manut-local'),
+              'Qual máquina': card.querySelector('.manut-qual-maquina'),
+              'Descrição': card.querySelector('.manut-desc'),
+              'Status': card.querySelector('.status-group')
+            };
+            highlightField(elMap[campoFaltando]);
+            return false;
+          }
+          if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
+        }
+      }
+    }
+    if(n === 8){
+      if(!document.querySelector('.binary-btn[data-group="solic"].selected')){
+        alert('⚠️ Por favor, informe se tem alguma solicitação de produto ou serviço.');
+        highlightField(document.querySelector('.binary-btn[data-group="solic"]').parentElement);
+        return false;
+      }
+      if(document.querySelector('.binary-btn[data-group="solic"][data-value="sim"].selected')){
+        const prodCards = document.querySelectorAll('#produtosList .item-card');
+        if(prodCards.length === 0){
+          alert('⚠️ Adicione pelo menos um produto ou serviço solicitado.');
+          highlightField(document.getElementById('btnAddProduto'));
+          return false;
+        }
+        for(const card of prodCards){
+          if(!isProdutoCompleto(card)){
+            card.classList.remove('collapsed');
+            document.getElementById('btnAddProduto').disabled = true;
+            const tipo = card.querySelector('.prod-tipo');
+            const desc = card.querySelector('.prod-desc');
+            const qtd  = card.querySelector('.prod-qtd');
+            const urg  = card.querySelector('.urgency-btn.selected');
+            const urgOutro = card.querySelector('.prod-urg-outro');
+            if(!tipo.value){ alert('⚠️ Selecione o tipo do produto.'); highlightField(tipo); return false; }
+            if(!desc.value.trim()){ alert('⚠️ Preencha a descrição do produto.'); highlightField(desc); return false; }
+            if(!qtd.value.trim()){ alert('⚠️ Informe a quantidade.'); highlightField(qtd); return false; }
+            if(!urg){ alert('⚠️ Selecione a urgência da solicitação.'); highlightField(card.querySelector('.urgency-group')); return false; }
+            if(urg.dataset.level === 'outro8' && !urgOutro.value.trim()){ alert('⚠️ Descreva a urgência.'); highlightField(urgOutro); return false; }
+            return false;
+          }
+          if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
+        }
+      }
+    }
+    if(n === 9){
+      const cards = document.querySelectorAll('#equipeList .equipe-card');
+      for(const card of cards){
+        if(!card.querySelector('.attend-btn.selected')){
+          const nome = card.querySelector('.item-title').textContent.replace('👤 ','').trim();
+          alert(`⚠️ Marque a presença de ${nome}.`);
+          highlightField(card.querySelector('.attend-group'));
+          return false;
         }
       }
     }
@@ -1040,9 +1231,9 @@
         renderEquipe();
         renderPastoChecklist2();
         document.querySelectorAll('.manut-local').forEach(s => {
-          const card = s.closest('.item-card');
-          const tipo = card.querySelector('.manut-tipo').value;
-          if(tipo !== 'Maquina') populatePastoSelect(s);
+          const prev = Array.from(s.selectedOptions).map(o => o.value);
+          s.innerHTML = (PASTOS[currentFazenda] || []).map(p => `<option value="${p}">${p}</option>`).join('');
+          prev.forEach(v => { const o = s.querySelector(`option[value="${v}"]`); if(o) o.selected = true; });
         });
         document.querySelectorAll('.trat-responsavel').forEach(populateTratResponsavel);
       });
@@ -1123,28 +1314,33 @@
       </div>
       <div class="trat-fields">
         <div class="item-title">🩺 Tratamento <span class="trat-num"></span></div>
-        <div class="field"><label>Identificação do Animal (brinco/nº)</label><input type="text" class="trat-animal" placeholder="Ex: 245"></div>
+        <div class="field"><label>Identificação do Animal</label><input type="text" class="trat-animal" placeholder="n° brinco ou quantidade de animais"></div>
         <div class="field"><label>Problema / Sintoma</label><input type="text" class="trat-problema" placeholder="Ex: Ferida na pata"></div>
         <div class="field"><label>Tratamento Aplicado</label><input type="text" class="trat-aplicado" placeholder="Ex: Pomada cicatrizante"></div>
-        <div class="field" style="margin-bottom:0;"><label>Responsável</label><select class="trat-responsavel"></select></div>
+        <div class="field"><label>Responsável</label><select class="trat-responsavel"></select></div>
+        <button type="button" class="btn-confirmar">✔ Confirmar Tratamento</button>
       </div>
     `;
     document.getElementById('tratamentosList').appendChild(div);
     renumberTratamentos();
     populateTratResponsavel(div.querySelector('.trat-responsavel'));
 
-    const checarConclusao = () => {
-      const animal = div.querySelector('.trat-animal').value.trim();
-      const problema = div.querySelector('.trat-problema').value.trim();
-      const aplicado = div.querySelector('.trat-aplicado').value.trim();
-      const responsavel = div.querySelector('.trat-responsavel').value.trim();
-      if(animal && problema && aplicado && responsavel){
-        div.classList.add('collapsed');
-        document.getElementById('btnAddTratamento').disabled = false;
+    div.querySelector('.btn-confirmar').addEventListener('click', () => {
+      const campos = [
+        {el: div.querySelector('.trat-animal'),     label: 'Identificação do Animal'},
+        {el: div.querySelector('.trat-problema'),   label: 'Problema / Sintoma'},
+        {el: div.querySelector('.trat-aplicado'),   label: 'Tratamento Aplicado'},
+        {el: div.querySelector('.trat-responsavel'), label: 'Responsável'}
+      ];
+      const vazio = campos.find(c => !c.el.value.trim());
+      if(vazio){
+        alert(`⚠️ Preencha o campo "${vazio.label}" antes de confirmar.`);
+        highlightField(vazio.el);
+        return;
       }
-    };
-    div.querySelector('.trat-responsavel').addEventListener('change', checarConclusao);
-    div.querySelector('.trat-responsavel').addEventListener('blur', checarConclusao);
+      div.classList.add('collapsed');
+      document.getElementById('btnAddTratamento').disabled = false;
+    });
 
     document.getElementById('btnAddTratamento').disabled = true;
   }
@@ -1204,7 +1400,7 @@
           <label>Nome do Produto</label>
           ${vacProdutoFieldHTML('Vacina')}
         </div>
-        <div class="field"><label>Quantidade de Animais</label><input type="number" min="0" class="vac-qtd" placeholder="0"></div>
+        <div class="field"><label>Quantidade de Animais por categoria</label><input type="number" min="0" inputmode="numeric" class="vac-qtd" placeholder="0"></div>
         <div class="field" style="margin-bottom:0;">
           <label>Categoria Animal</label>
           <select class="vac-categoria">
@@ -1262,6 +1458,8 @@
   // ===================== BINARY (SIM/NÃO) =====================
   function setupBinaryButtons(){
     const detailsMap = {
+      trat: 'tratDetails',
+      vac: 'vacDetails',
       curral: 'curralDetails',
       mistura: 'misturaDetails',
       infra: 'infraDetails',
@@ -1369,95 +1567,140 @@
   }
 
   // ===================== SEÇÃO 7: INFRAESTRUTURA =====================
+  const MAQUINAS_NEW = ['Trator','Bomba','Implemento','Roçadeira','Moto/Veículo','Outro'];
+  const TIPOS_COM_PASTO = ['Bebedouro','Cocho','Cerca','Estrada'];
   let manutencaoCount = 0;
-  function addManutencao(){
-    const lista = document.getElementById('manutencoesList');
-    const cards = lista.querySelectorAll('.item-card');
-    if(cards.length > 0){
-      const last = cards[cards.length - 1];
-      const tipo = last.querySelector('.manut-tipo').value;
-      const local = last.querySelector('.manut-local').value;
-      const status = last.querySelector('.status-btn.selected');
-      if(!tipo || !local || !status){
-        alert('⚠️ Antes de adicionar uma nova manutenção, preencha o Tipo, o Local e o Status da manutenção anterior.');
-        return;
-      }
-    }
 
+  function addManutencao(){
     manutencaoCount++;
-    const id = 'manut' + manutencaoCount;
+    const n = manutencaoCount;
+    const id = 'manut' + n;
     const div = document.createElement('div');
     div.className = 'item-card';
     div.id = id;
     div.innerHTML = `
       <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
-      <div class="item-title">🔧 Manutenção ${manutencaoCount}</div>
-      <div class="field">
-        <label>Tipo</label>
-        <select class="manut-tipo" onchange="onTipoManutencaoChange(this)">
-          <option value="">Selecione...</option>
-          <option value="Bebedouro">Bebedouro</option>
-          <option value="Cocho">Cocho</option>
-          <option value="Cerca">Cerca</option>
-          <option value="Estrada">Estrada / Acesso</option>
-          <option value="Maquina">Máquina</option>
-          <option value="Outro">Outro</option>
-        </select>
+      <div class="trat-collapsed-btn" onclick="reabrirManutencao('${id}')">
+        <span>✅ Manutenção <span class="manut-num"></span><span class="manut-tipo-label"></span></span>
+        <span class="trat-edit-hint">✏️ Toque para editar</span>
       </div>
-      <div class="field manut-bebedouro-sub" style="display:none;">
-        <label>O que precisa ser feito?</label>
-        <div class="btn-group">
-          <button type="button" class="choice-btn manut-beb-btn" data-value="Limpeza" onclick="selectChoice(this)">🧹 Limpeza</button>
-          <button type="button" class="choice-btn manut-beb-btn" data-value="Manutenção" onclick="selectChoice(this)">🔧 Manutenção</button>
+      <div class="trat-fields">
+        <div class="item-title">🔧 Manutenção <span class="manut-num"></span></div>
+        <div class="field">
+          <label>Tipo</label>
+          <select class="manut-tipo" onchange="onTipoManutencaoChange(this)">
+            <option value="">Selecione...</option>
+            <option value="Bebedouro">Bebedouro</option>
+            <option value="Cocho">Cocho</option>
+            <option value="Cerca">Cerca</option>
+            <option value="Curral">Curral</option>
+            <option value="Estrada">Estrada / Acesso</option>
+            <option value="Maquina">Máquina</option>
+            <option value="Outro">Outro</option>
+          </select>
         </div>
-      </div>
-      <div class="field">
-        <label class="manut-local-label">Local (selecione o tipo primeiro)</label>
-        <select class="manut-local"><option value="">— selecione —</option></select>
-      </div>
-      <div class="field"><label>Descrição</label><textarea class="manut-desc" placeholder="Descreva o que precisa ser feito"></textarea></div>
-      <div class="field">
-        <label>Urgência</label>
-        <div class="btn-group urgency-group">
-          <button type="button" class="urgency-btn" data-level="pode-esperar" onclick="selectUrgency(this)">🟢 Pode esperar</button>
-          <button type="button" class="urgency-btn" data-level="essa-semana" onclick="selectUrgency(this)">🟡 Essa semana</button>
-          <button type="button" class="urgency-btn" data-level="urgente7" onclick="selectUrgency(this)">🔴 Urgente</button>
+        <div class="field manut-beb-sub" style="display:none;">
+          <label>O que precisa ser feito?</label>
+          <div class="btn-group">
+            <button type="button" class="choice-btn manut-beb-btn" data-value="Limpeza" onclick="selectChoice(this)">🧹 Limpeza</button>
+            <button type="button" class="choice-btn manut-beb-btn" data-value="Manutenção" onclick="selectChoice(this)">🔧 Manutenção</button>
+          </div>
         </div>
-      </div>
-      <div class="field" style="margin-bottom:0;">
-        <label>Status</label>
-        <div class="btn-group status-group">
-          <button type="button" class="status-btn" data-value="Será feito" onclick="selectStatus(this)">⏳ Será feito</button>
-          <button type="button" class="status-btn" data-value="Em andamento" onclick="selectStatus(this)">🔄 Em andamento</button>
-          <button type="button" class="status-btn" data-value="Feito" onclick="selectStatus(this)">✅ Feito</button>
+        <div class="field manut-pasto-wrap" style="display:none;">
+          <label>Local (pasto)</label>
+          <p class="hint">Toque e segure para selecionar mais de um.</p>
+          <select class="manut-local pasto-select-multi" multiple size="5"></select>
+        </div>
+        <div class="field manut-maquina-wrap" style="display:none;">
+          <label>Qual máquina</label>
+          <select class="manut-qual-maquina">
+            <option value="">— selecione —</option>
+            ${MAQUINAS_NEW.map(m => `<option value="${m}">${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Descrição</label>
+          <textarea class="manut-desc" placeholder="Descreva o que precisa ser feito e a urgência"></textarea>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Status</label>
+          <div class="btn-group status-group">
+            <button type="button" class="status-btn" data-value="Feito" onclick="selectStatus(this)" disabled>✅ Feito</button>
+            <button type="button" class="status-btn" data-value="Em andamento" onclick="selectStatus(this)" disabled>🔄 Em andamento</button>
+            <button type="button" class="status-btn" data-value="Será feito" onclick="selectStatus(this)" disabled>⏳ Será feito</button>
+          </div>
         </div>
       </div>
     `;
-    lista.appendChild(div);
+    document.getElementById('manutencoesList').appendChild(div);
+    renumberManutencoes();
+
+    const checarConclusao = () => {
+      if(!isManutencaoCompleta(div)) return;
+      const tipoText = div.querySelector('.manut-tipo').options[div.querySelector('.manut-tipo').selectedIndex].text;
+      div.querySelector('.manut-tipo-label').textContent = ' - ' + tipoText;
+      div.classList.add('collapsed');
+      document.getElementById('btnAddManutencao').disabled = false;
+    };
+
+    const atualizarStatusBtns = () => {
+      const habilitado = div.querySelector('.manut-desc').value.trim().length > 0;
+      div.querySelectorAll('.status-btn').forEach(b => b.disabled = !habilitado);
+    };
+
+    div.querySelector('.manut-tipo').addEventListener('change', checarConclusao);
+    div.querySelector('.manut-desc').addEventListener('input', atualizarStatusBtns);
+    div.querySelector('.manut-qual-maquina').addEventListener('change', checarConclusao);
+    div.querySelector('.manut-local').addEventListener('change', checarConclusao);
+    div.querySelectorAll('.status-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
+    div.querySelectorAll('.manut-beb-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
+
+    document.getElementById('btnAddManutencao').disabled = true;
+  }
+
+  function isManutencaoCompleta(div){
+    const tipo = div.querySelector('.manut-tipo').value;
+    if(!tipo) return false;
+    if(tipo === 'Bebedouro' && !div.querySelector('.manut-beb-btn.selected')) return false;
+    if(TIPOS_COM_PASTO.includes(tipo) && div.querySelector('.manut-local').selectedOptions.length === 0) return false;
+    if(tipo === 'Maquina' && !div.querySelector('.manut-qual-maquina').value) return false;
+    if(!div.querySelector('.manut-desc').value.trim()) return false;
+    if(!div.querySelector('.status-btn.selected')) return false;
+    return true;
+  }
+
+  function reabrirManutencao(id){
+    document.getElementById(id).classList.remove('collapsed');
+    document.getElementById('btnAddManutencao').disabled = true;
+  }
+
+  function renumberManutencoes(){
+    document.querySelectorAll('#manutencoesList .item-card').forEach((card, i) => {
+      card.querySelectorAll('.manut-num').forEach(el => el.textContent = i + 1);
+    });
   }
 
   function onTipoManutencaoChange(select){
     const card = select.closest('.item-card');
     const tipo = select.value;
-    const bebSub = card.querySelector('.manut-bebedouro-sub');
-    const localSelect = card.querySelector('.manut-local');
-    const localLabel = card.querySelector('.manut-local-label');
 
-    bebSub.style.display = (tipo === 'Bebedouro') ? 'block' : 'none';
-    if(!bebSub.style.display || tipo !== 'Bebedouro'){
-      bebSub.querySelectorAll('.manut-beb-btn').forEach(b => b.classList.remove('selected'));
-    }
+    card.querySelector('.manut-beb-sub').style.display = tipo === 'Bebedouro' ? 'block' : 'none';
+    if(tipo !== 'Bebedouro') card.querySelectorAll('.manut-beb-btn').forEach(b => b.classList.remove('selected'));
 
-    if(tipo === 'Maquina'){
-      localLabel.textContent = 'Qual máquina';
-      localSelect.innerHTML = '<option value="">— selecione —</option>' + MAQUINAS.map(m => `<option value="${m}">${m}</option>`).join('');
-    } else if(tipo === ''){
-      localLabel.textContent = 'Local (selecione o tipo primeiro)';
-      localSelect.innerHTML = '<option value="">— selecione —</option>';
+    const pastoWrap = card.querySelector('.manut-pasto-wrap');
+    const maquinaWrap = card.querySelector('.manut-maquina-wrap');
+    const pastoSel = card.querySelector('.manut-local');
+
+    if(TIPOS_COM_PASTO.includes(tipo)){
+      pastoWrap.style.display = 'block';
+      maquinaWrap.style.display = 'none';
+      pastoSel.innerHTML = (PASTOS[currentFazenda] || []).map(p => `<option value="${p}">${p}</option>`).join('');
+    } else if(tipo === 'Maquina'){
+      pastoWrap.style.display = 'none';
+      maquinaWrap.style.display = 'block';
     } else {
-      localLabel.textContent = 'Local (pasto)';
-      populatePastoSelect(localSelect);
-      localSelect.value = '';
+      pastoWrap.style.display = 'none';
+      maquinaWrap.style.display = 'none';
     }
   }
 
@@ -1478,49 +1721,125 @@
   }
 
   function selectUrgency8(btn){
-    selectUrgency(btn);
     const card = btn.closest('.item-card');
+    const campos = [
+      {el: card.querySelector('.prod-tipo'),  label: 'Tipo do produto'},
+      {el: card.querySelector('.prod-desc'),  label: 'Descrição'},
+      {el: card.querySelector('.prod-qtd'),   label: 'Quantidade'}
+    ];
+    const vazio = campos.find(c => !c.el.value.trim());
+    if(vazio){
+      alert(`⚠️ Preencha o campo "${vazio.label}" antes de selecionar a urgência.`);
+      highlightField(vazio.el);
+      return;
+    }
+    selectUrgency(btn);
     const outroInput = card.querySelector('.prod-urg-outro');
     outroInput.style.display = (btn.dataset.level === 'outro8') ? 'block' : 'none';
   }
 
   // ===================== SEÇÃO 8: SOLICITAÇÃO DE PRODUTOS =====================
+  const PROD_HINTS = {
+    'Produto veterinário':       {desc: 'Ex: Ivermectina, Antibiótico, Vermífugo',     qtd: 'Ex: 5 frascos, 2 caixas'},
+    'Produto de nutrição':       {desc: 'Ex: Sal mineral, Ureia, Fubá, Soja',          qtd: 'Ex: 10 sacos de 30 kg'},
+    'Material de infraestrutura':{desc: 'Ex: Arame, Mourão, Cimento, Pregos',          qtd: 'Ex: 5 rolos, 20 unidades'},
+    'Serviço externo':           {desc: 'Ex: Conserto de..., Veterinário, Mecânico',   qtd: 'Ex: 1 visita'},
+    'Equipamento / máquina':     {desc: 'Ex: Bomba, Roçadeira, Peça de reposição',      qtd: 'Ex: 1 unidade'},
+    'Outro':                     {desc: 'Ex: Descreva o produto ou serviço',            qtd: 'Ex: Informe a quantidade'}
+  };
+
   let produtoCount = 0;
   function addProduto(){
     produtoCount++;
-    const id = 'prod' + produtoCount;
+    const n = produtoCount;
+    const id = 'prod' + n;
     const div = document.createElement('div');
     div.className = 'item-card';
     div.id = id;
     div.innerHTML = `
       <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
-      <div class="item-title">📦 Produto ${produtoCount}</div>
-      <div class="field">
-        <label>Tipo</label>
-        <select class="prod-tipo">
-          <option value="">Selecione...</option>
-          <option>Produto veterinário</option>
-          <option>Produto de nutrição</option>
-          <option>Material de infraestrutura</option>
-          <option>Serviço externo</option>
-          <option>Equipamento / máquina</option>
-          <option>Outro</option>
-        </select>
+      <div class="trat-collapsed-btn" onclick="reabrirProduto('${id}')">
+        <span>✅ Pedido <span class="prod-num"></span><span class="prod-tipo-label"></span></span>
+        <span class="trat-edit-hint">✏️ Toque para editar</span>
       </div>
-      <div class="field"><label>Descrição</label><input type="text" class="prod-desc" placeholder="Ex: Sal mineral, arame liso"></div>
-      <div class="field"><label>Quantidade</label><input type="text" class="prod-qtd" placeholder="Ex: 10 sacos, 50 kg"></div>
-      <div class="field" style="margin-bottom:0;">
-        <label>Urgência</label>
-        <div class="btn-group urgency-group">
-          <button type="button" class="urgency-btn" data-level="ate-amanha" onclick="selectUrgency8(this)">🔴 Até amanhã</button>
-          <button type="button" class="urgency-btn" data-level="semana-que-vem" onclick="selectUrgency8(this)">🟡 Semana que vem</button>
-          <button type="button" class="urgency-btn" data-level="manutencao-estoque" onclick="selectUrgency8(this)">🟢 Manutenção de estoque</button>
-          <button type="button" class="urgency-btn" data-level="outro8" onclick="selectUrgency8(this)">⚪ Outro</button>
+      <div class="trat-fields">
+        <div class="item-title">📦 Pedido <span class="prod-num"></span></div>
+        <div class="field">
+          <label>Tipo</label>
+          <select class="prod-tipo">
+            <option value="">Selecione...</option>
+            <option>Produto veterinário</option>
+            <option>Produto de nutrição</option>
+            <option>Material de infraestrutura</option>
+            <option>Serviço externo</option>
+            <option>Equipamento / máquina</option>
+            <option>Outro</option>
+          </select>
         </div>
-        <input type="text" class="prod-urg-outro" placeholder="Descreva a urgência" style="display:none;margin-top:8px;">
+        <div class="field">
+          <label>Descrição</label>
+          <input type="text" class="prod-desc" placeholder="Selecione o tipo primeiro">
+        </div>
+        <div class="field">
+          <label>Quantidade</label>
+          <input type="text" class="prod-qtd" placeholder="Selecione o tipo primeiro">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Urgência</label>
+          <div class="btn-group urgency-group">
+            <button type="button" class="urgency-btn" data-level="ate-amanha" onclick="selectUrgency8(this)">🔴 Até amanhã</button>
+            <button type="button" class="urgency-btn" data-level="semana-que-vem" onclick="selectUrgency8(this)">🟡 Semana que vem</button>
+            <button type="button" class="urgency-btn" data-level="manutencao-estoque" onclick="selectUrgency8(this)">🟢 Manutenção de estoque</button>
+            <button type="button" class="urgency-btn" data-level="outro8" onclick="selectUrgency8(this)">⚪ Outro</button>
+          </div>
+          <input type="text" class="prod-urg-outro" placeholder="Descreva a urgência" style="display:none;margin-top:8px;">
+        </div>
       </div>
     `;
     document.getElementById('produtosList').appendChild(div);
+    renumberProdutos();
+
+    const checarConclusao = () => {
+      if(!isProdutoCompleto(div)) return;
+      const tipoVal = div.querySelector('.prod-tipo').value;
+      div.querySelector('.prod-tipo-label').textContent = ' - ' + tipoVal;
+      div.classList.add('collapsed');
+      document.getElementById('btnAddProduto').disabled = false;
+    };
+
+    div.querySelector('.prod-tipo').addEventListener('change', () => {
+      const hints = PROD_HINTS[div.querySelector('.prod-tipo').value] || {};
+      div.querySelector('.prod-desc').placeholder = hints.desc || 'Ex: Sal mineral, arame liso';
+      div.querySelector('.prod-qtd').placeholder  = hints.qtd  || 'Ex: 10 sacos, 50 kg';
+      checarConclusao();
+    });
+    div.querySelector('.prod-desc').addEventListener('input', checarConclusao);
+    div.querySelector('.prod-qtd').addEventListener('input', checarConclusao);
+    div.querySelector('.prod-urg-outro').addEventListener('blur', checarConclusao);
+    div.querySelectorAll('.urgency-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
+
+    document.getElementById('btnAddProduto').disabled = true;
+  }
+
+  function isProdutoCompleto(div){
+    if(!div.querySelector('.prod-tipo').value) return false;
+    if(!div.querySelector('.prod-desc').value.trim()) return false;
+    if(!div.querySelector('.prod-qtd').value.trim()) return false;
+    const urgBtn = div.querySelector('.urgency-btn.selected');
+    if(!urgBtn) return false;
+    if(urgBtn.dataset.level === 'outro8' && !div.querySelector('.prod-urg-outro').value.trim()) return false;
+    return true;
+  }
+
+  function reabrirProduto(id){
+    document.getElementById(id).classList.remove('collapsed');
+    document.getElementById('btnAddProduto').disabled = true;
+  }
+
+  function renumberProdutos(){
+    document.querySelectorAll('#produtosList .item-card').forEach((card, i) => {
+      card.querySelectorAll('.prod-num').forEach(el => el.textContent = i + 1);
+    });
   }
 
   // ===================== SEÇÃO 9: EQUIPE =====================
@@ -1565,6 +1884,16 @@
       const aberto = document.querySelector('#misturasList .item-card:not(.collapsed)');
       document.getElementById('btnAddMistura').disabled = !!aberto;
     }
+    if(parentId === 'manutencoesList'){
+      renumberManutencoes();
+      const aberto = document.querySelector('#manutencoesList .item-card:not(.collapsed)');
+      document.getElementById('btnAddManutencao').disabled = !!aberto;
+    }
+    if(parentId === 'produtosList'){
+      renumberProdutos();
+      const aberto = document.querySelector('#produtosList .item-card:not(.collapsed)');
+      document.getElementById('btnAddProduto').disabled = !!aberto;
+    }
   }
 
   // ===================== GERAR RESUMO =====================
@@ -1602,36 +1931,34 @@
 
     // Seção 3 - Sanidade Animal
     r += `🩺 SANIDADE ANIMAL\n`;
-    const tratCards = document.querySelectorAll('#tratamentosList .item-card');
-    let temTratamento = false;
-    tratCards.forEach((card, i) => {
-      const animal = card.querySelector('.trat-animal').value;
-      const problema = card.querySelector('.trat-problema').value;
-      const aplicado = card.querySelector('.trat-aplicado').value;
-      const responsavel = card.querySelector('.trat-responsavel').value;
-      if(animal || problema || aplicado || responsavel){
-        temTratamento = true;
+    const tratSim = document.querySelector('.binary-btn[data-group="trat"][data-value="sim"].selected');
+    if(tratSim){
+      document.querySelectorAll('#tratamentosList .item-card').forEach(card => {
+        const animal = card.querySelector('.trat-animal').value;
+        const problema = card.querySelector('.trat-problema').value;
+        const aplicado = card.querySelector('.trat-aplicado').value;
+        const responsavel = card.querySelector('.trat-responsavel').value;
         r += `- Animal: ${animal || '-'} | Problema: ${problema || '-'} | Tratamento: ${aplicado || '-'} | Responsável: ${responsavel || '-'}\n`;
-      }
-    });
-    if(!temTratamento) r += `Nenhum animal doente ou medicado hoje.\n`;
+      });
+    } else {
+      r += `Nenhum animal doente ou medicado hoje.\n`;
+    }
     r += `\n`;
 
     // Seção 4 - Vacinas e Vermífugos
     r += `💉 VACINAS E VERMÍFUGOS\n`;
-    const vacCards = document.querySelectorAll('#vacinasList .item-card');
-    let temVacina = false;
-    vacCards.forEach((card, i) => {
-      const tipo = card.querySelector('.vac-tipo').value;
-      const produto = card.querySelector('.vac-produto').value;
-      const qtd = card.querySelector('.vac-qtd').value;
-      const categoria = card.querySelector('.vac-categoria').value;
-      if(produto || Number(qtd) > 0){
-        temVacina = true;
+    const vacSim = document.querySelector('.binary-btn[data-group="vac"][data-value="sim"].selected');
+    if(vacSim){
+      document.querySelectorAll('#vacinasList .item-card').forEach(card => {
+        const tipo = card.querySelector('.vac-tipo').value;
+        const produto = card.querySelector('.vac-produto').value;
+        const qtd = card.querySelector('.vac-qtd').value;
+        const categoria = card.querySelector('.vac-categoria').value;
         r += `- ${tipo}: ${produto || '-'} | Qtd Animais: ${qtd || '0'}${categoria ? ' | Categoria: ' + categoria : ''}\n`;
-      }
-    });
-    if(!temVacina) r += `Nenhuma aplicação de vacina/vermífugo hoje.\n`;
+      });
+    } else {
+      r += `Nenhuma aplicação de vacina/vermífugo hoje.\n`;
+    }
     r += `\n`;
 
     // Seção 5 - Atividades no Curral
@@ -1659,13 +1986,16 @@
     const mixSim = document.querySelector('.binary-btn[data-group="mistura"][data-value="sim"].selected');
     if(mixSim){
       document.querySelectorAll('#misturasList .item-card').forEach((card, i) => {
-        const salbranco = card.querySelector('.mix-salbranco').value || '0';
-        const mineral = card.querySelector('.mix-mineral').value || '0';
-        const fuba = card.querySelector('.mix-fuba').value || '0';
-        const ureia = card.querySelector('.mix-ureia').value || '0';
-        const soja = card.querySelector('.mix-soja').value || '0';
-        const promil = card.querySelector('.mix-promil').value || '0';
-        r += `- Mistura ${i+1}: Sal Branco ${salbranco}kg | Sal Mineral 160 ${mineral}kg | Fubá ${fuba}kg | Ureia ${ureia}kg | Soja ${soja}kg | Promil ${promil}kg\n`;
+        const campos = [
+          {label: 'Sal Branco',     val: card.querySelector('.mix-salbranco').value},
+          {label: 'Sal Mineral 160',val: card.querySelector('.mix-mineral').value},
+          {label: 'Fubá',           val: card.querySelector('.mix-fuba').value},
+          {label: 'Ureia',          val: card.querySelector('.mix-ureia').value},
+          {label: 'Soja',           val: card.querySelector('.mix-soja').value},
+          {label: 'Promil',         val: card.querySelector('.mix-promil').value},
+        ];
+        const itens = campos.filter(c => Number(c.val) > 0).map(c => `${c.label} ${c.val}kg`);
+        r += `- Mistura ${i+1}: ${itens.length ? itens.join(' | ') : 'Nenhum ingrediente informado'}\n`;
       });
     } else {
       r += `Nenhuma mistura feita hoje.\n`;
@@ -1679,15 +2009,18 @@
       const cards = document.querySelectorAll('#manutencoesList .item-card');
       if(cards.length === 0) r += `Nenhuma manutenção registrada.\n`;
       cards.forEach((card, i) => {
-        const tipo = card.querySelector('.manut-tipo').value || '-';
+        const tipoEl = card.querySelector('.manut-tipo');
+        const tipo = tipoEl.options[tipoEl.selectedIndex]?.text || '-';
         const bebAtividade = card.querySelector('.manut-beb-btn.selected');
-        const local = card.querySelector('.manut-local').value || '-';
+        const pastos = Array.from(card.querySelector('.manut-local').selectedOptions).map(o => o.value);
+        const qualMaquina = card.querySelector('.manut-qual-maquina').value;
         const desc = card.querySelector('.manut-desc').value || '-';
-        const urg = card.querySelector('.urgency-btn.selected');
         const status = card.querySelector('.status-btn.selected');
         r += `- Manutenção ${i+1}: Tipo: ${tipo}`;
         if(bebAtividade) r += ` (${bebAtividade.dataset.value})`;
-        r += ` | Local: ${local} | Descrição: ${desc} | Urgência: ${urg ? urg.textContent.trim() : '-'} | Status: ${status ? status.dataset.value : '-'}\n`;
+        if(pastos.length) r += ` | Local: ${pastos.join(', ')}`;
+        if(qualMaquina) r += ` | Máquina: ${qualMaquina}`;
+        r += ` | Descrição: ${desc} | Status: ${status ? status.dataset.value : '-'}\n`;
       });
     } else {
       r += `Nenhuma manutenção necessária hoje.\n`;
@@ -1710,7 +2043,7 @@
           temProduto = true;
           let urgTexto = urg ? urg.textContent.trim() : '-';
           if(urg && urg.dataset.level === 'outro8' && urgOutro) urgTexto += ` (${urgOutro})`;
-          r += `- ${desc || '-'} (${tipo || '-'}) | Qtd: ${qtd || '-'} | Urgência: ${urgTexto}\n`;
+          r += `- ${desc || '-'} | Qtd: ${qtd || '-'} | Urgência: ${urgTexto}\n`;
         }
       });
       if(!temProduto) r += `Nenhum produto preenchido.\n`;
