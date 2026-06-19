@@ -1263,13 +1263,11 @@
             card.classList.remove('collapsed');
             document.getElementById('btnAddMovimento').disabled = true;
             const tipo = card.querySelector('.mov-tipo-btn.selected');
-            const produto = card.querySelector('.mov-produto');
-            const qtd = card.querySelector('.mov-qtd');
             const local = card.querySelector('.mov-local');
+            const produtos = card.querySelector('.mov-produtos');
             if(!tipo){ alert('⚠️ Selecione o Tipo (Entrada ou Saída).'); highlightField(card.querySelector('.mov-tipo-group')); return false; }
-            if(!produto.value.trim()){ alert('⚠️ Preencha o Produto.'); highlightField(produto); return false; }
-            if(!qtd.value.trim()){ alert('⚠️ Preencha a Quantidade.'); highlightField(qtd); return false; }
             if(!local.value.trim()){ alert(`⚠️ Preencha o campo "${tipo.dataset.value === 'Entrada' ? 'De onde veio' : 'Para onde foi'}".`); highlightField(local); return false; }
+            if(!produtos.value.trim()){ alert('⚠️ Preencha os produtos e quantidades.'); highlightField(produtos); return false; }
             return false;
           }
           if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
@@ -2007,13 +2005,16 @@
             <button type="button" class="choice-btn mov-tipo-btn" data-value="Saída" onclick="selectTipoMovimento(this)">📤 Saída</button>
           </div>
         </div>
-        <div class="field"><label>Produto</label><input type="text" class="mov-produto" placeholder="Ex: Sal mineral, arame liso"></div>
-        <div class="field"><label>Quantidade</label><input type="text" class="mov-qtd" placeholder="Ex: 10 sacos, 50 kg"></div>
         <div class="field mov-local-wrap" style="display:none;">
           <label class="mov-local-label">De onde veio / Para onde foi</label>
           <input type="text" class="mov-local" placeholder="">
         </div>
-        <button type="button" class="btn-confirmar">✔ Confirmar Movimentação</button>
+        <div class="field" style="margin-bottom:0;">
+          <label>Produtos e quantidades</label>
+          <p class="hint">Escreva um item por linha.</p>
+          <textarea class="mov-produtos" placeholder="Ex:&#10;- Sal mineral: 10 sacos&#10;- Arame liso: 50kg&#10;- Ureia: 5 sacos"></textarea>
+        </div>
+        <button type="button" class="btn-confirmar">✔ Confirmar</button>
       </div>
     `;
     document.getElementById('movimentosList').appendChild(div);
@@ -2027,9 +2028,8 @@
         return;
       }
       const campos = [
-        {el: div.querySelector('.mov-produto'), label: 'Produto'},
-        {el: div.querySelector('.mov-qtd'),     label: 'Quantidade'},
-        {el: div.querySelector('.mov-local'),   label: tipoBtn.dataset.value === 'Saída' ? 'Para onde foi' : 'De onde veio'}
+        {el: div.querySelector('.mov-local'),    label: tipoBtn.dataset.value === 'Saída' ? 'Para onde foi' : 'De onde veio'},
+        {el: div.querySelector('.mov-produtos'), label: 'Produtos e quantidades'}
       ];
       const vazio = campos.find(c => !c.el.value.trim());
       if(vazio){
@@ -2055,9 +2055,8 @@
 
   function isMovimentoCompleto(div){
     if(!div.querySelector('.mov-tipo-btn.selected')) return false;
-    if(!div.querySelector('.mov-produto').value.trim()) return false;
-    if(!div.querySelector('.mov-qtd').value.trim()) return false;
     if(!div.querySelector('.mov-local').value.trim()) return false;
+    if(!div.querySelector('.mov-produtos').value.trim()) return false;
     return true;
   }
 
@@ -2275,11 +2274,10 @@
       document.querySelectorAll('#movimentosList .item-card').forEach((card, i) => {
         const tipoBtn = card.querySelector('.mov-tipo-btn.selected');
         const tipo = tipoBtn ? tipoBtn.dataset.value : '-';
-        const produto = card.querySelector('.mov-produto').value || '-';
-        const qtd = card.querySelector('.mov-qtd').value || '-';
         const local = card.querySelector('.mov-local').value || '-';
+        const produtos = card.querySelector('.mov-produtos').value || '-';
         const localLabel = tipoBtn && tipoBtn.dataset.value === 'Saída' ? 'Para onde foi' : 'De onde veio';
-        r += `- ${tipo}: ${produto} | Qtd: ${qtd} | ${localLabel}: ${local}\n`;
+        r += `- ${tipo} | ${localLabel}: ${local}\n  ${produtos.split('\n').join('\n  ')}\n`;
       });
     } else {
       r += `Nenhuma entrada ou saída de produtos hoje.\n`;
