@@ -147,6 +147,10 @@
     border-radius:14px;
     padding:8px;
   }
+  .checkbox-card.field-error{
+    border-color:var(--urgente);
+    box-shadow:0 0 0 3px rgba(230,57,70,0.15);
+  }
   textarea{resize:vertical;min-height:80px;}
   select[multiple]{
     height:auto;
@@ -761,6 +765,11 @@
       <div id="infraDetails">
         <div id="manutencoesList"></div>
         <button type="button" class="add-btn" id="btnAddManutencao" onclick="addManutencao()">➕ Adicionar Serviço</button>
+        <label class="checkbox-card" id="nenhumServicoWrap" style="margin-top:16px;">
+          <input type="checkbox" id="nenhumServico">
+          <span class="cb-icon">✅</span>
+          <span>Nenhum serviço necessário hoje</span>
+        </label>
       </div>
     </section>
 
@@ -881,6 +890,10 @@
     populateCurralCategorias();
     setupNav();
     updateUI();
+
+    document.getElementById('nenhumServico').addEventListener('change', function(){
+      document.getElementById('btnAddManutencao').disabled = this.checked;
+    });
 
     document.getElementById('pastoList2').addEventListener('change', function(){
       const nomes = Array.from(this.selectedOptions).map(o => o.value);
@@ -1139,6 +1152,11 @@
     }
     if(n === 7){
       const manutCards = document.querySelectorAll('#manutencoesList .item-card');
+      if(manutCards.length === 0 && !document.getElementById('nenhumServico').checked){
+        alert('⚠️ Marque "Nenhum serviço necessário hoje" ou adicione um serviço.');
+        highlightField(document.getElementById('nenhumServicoWrap'));
+        return false;
+      }
       for(const card of manutCards){
         if(!isManutencaoCompleta(card)){
           const titulo = card.querySelector('.item-title').textContent;
@@ -1573,6 +1591,13 @@
   const TIPOS_COM_PASTO = ['Pasto','Bebedouro','Cocho','Cerca','Estrada'];
   let manutencaoCount = 0;
 
+  function atualizarNenhumServico(){
+    const temCard = document.querySelectorAll('#manutencoesList .item-card').length > 0;
+    const wrap = document.getElementById('nenhumServicoWrap');
+    wrap.style.display = temCard ? 'none' : 'flex';
+    if(temCard) document.getElementById('nenhumServico').checked = false;
+  }
+
   function addManutencao(){
     manutencaoCount++;
     const n = manutencaoCount;
@@ -1651,6 +1676,7 @@
     `;
     document.getElementById('manutencoesList').appendChild(div);
     renumberManutencoes();
+    atualizarNenhumServico();
 
     const checarConclusao = () => {
       if(!isManutencaoCompleta(div)) return;
@@ -1927,6 +1953,7 @@
       renumberManutencoes();
       const aberto = document.querySelector('#manutencoesList .item-card:not(.collapsed)');
       document.getElementById('btnAddManutencao').disabled = !!aberto;
+      atualizarNenhumServico();
     }
     if(parentId === 'produtosList'){
       renumberProdutos();
