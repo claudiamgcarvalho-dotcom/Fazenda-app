@@ -748,27 +748,19 @@
       </div>
     </section>
 
-    <!-- ============ SEÇÃO 7: INFRAESTRUTURA ============ -->
+    <!-- ============ SEÇÃO 7: SERVIÇOS ============ -->
     <section class="form-section" data-section="7">
       <div class="section-header">
         <div class="section-icon">🔧</div>
         <div>
-          <h2>Infraestrutura</h2>
-          <div class="section-sub">Manutenções e consertos</div>
+          <h2>Serviços</h2>
+          <div class="section-sub">Pasto, Cercas, Cochos, Bebedouros, Máquinas</div>
         </div>
       </div>
 
-      <div class="field">
-        <label>Foi necessário alguma manutenção (conserto) hoje?</label>
-        <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="infra" data-value="sim">✅ Sim</button>
-          <button type="button" class="binary-btn" data-group="infra" data-value="nao">❌ Não</button>
-        </div>
-      </div>
-
-      <div id="infraDetails" style="display:none;">
+      <div id="infraDetails">
         <div id="manutencoesList"></div>
-        <button type="button" class="add-btn" id="btnAddManutencao" onclick="addManutencao()">➕ Adicionar Manutenção</button>
+        <button type="button" class="add-btn" id="btnAddManutencao" onclick="addManutencao()">➕ Adicionar Serviço</button>
       </div>
     </section>
 
@@ -873,7 +865,7 @@
 
   // ===================== CONFIG GERAL =====================
   const totalSections = 9;
-  const sectionNames = ["Identificação","Conferência de Rebanho","Sanidade Animal","Vacinas e Vermífugos","Atividades no Curral","Nutrição e Misturas","Infraestrutura","Solicitações de Produtos","Fechamento"];
+  const sectionNames = ["Identificação","Conferência de Rebanho","Sanidade Animal","Vacinas e Vermífugos","Atividades no Curral","Nutrição e Misturas","Serviços","Solicitações de Produtos","Fechamento"];
   const sectionIcons = ["🪪","🐄","🩺","💉","🐂","🌾","🔧","📦","✅"];
   let currentSection = 1;
   let currentFazenda = '';
@@ -1146,43 +1138,36 @@
       }
     }
     if(n === 7){
-      if(!document.querySelector('.binary-btn[data-group="infra"].selected')){
-        alert('⚠️ Por favor, informe se foi necessário alguma manutenção hoje.');
-        highlightField(document.querySelector('.binary-btn[data-group="infra"]').parentElement);
-        return false;
-      }
-      if(document.querySelector('.binary-btn[data-group="infra"][data-value="sim"].selected')){
-        const manutCards = document.querySelectorAll('#manutencoesList .item-card');
-        if(manutCards.length === 0){
-          alert('⚠️ Adicione ao menos uma manutenção clicando em "+ Adicionar Manutenção".');
-          highlightField(document.getElementById('btnAddManutencao'));
+      const manutCards = document.querySelectorAll('#manutencoesList .item-card');
+      for(const card of manutCards){
+        if(!isManutencaoCompleta(card)){
+          const titulo = card.querySelector('.item-title').textContent;
+          card.classList.remove('collapsed');
+          document.getElementById('btnAddManutencao').disabled = true;
+          const tipo = card.querySelector('.manut-tipo').value;
+          const pastoSub = card.querySelector('.manut-pasto-sub-btn.selected');
+          let campoFaltando = !tipo ? 'Tipo' :
+            (tipo === 'Bebedouro' && !card.querySelector('.manut-beb-btn.selected')) ? 'O que precisa ser feito' :
+            (tipo === 'Pasto' && !pastoSub) ? 'O que precisa ser feito (Pasto)' :
+            (tipo === 'Pasto' && pastoSub && pastoSub.dataset.value === 'Limpeza' && !card.querySelector('.manut-limpeza-tipo').value) ? 'Tipo de limpeza' :
+            (TIPOS_COM_PASTO.includes(tipo) && card.querySelector('.manut-local').selectedOptions.length === 0) ? 'Local (pasto)' :
+            (tipo === 'Maquina' && !card.querySelector('.manut-qual-maquina').value) ? 'Qual máquina' :
+            !card.querySelector('.manut-desc').value.trim() ? 'Descrição' : 'Status';
+          alert(`⚠️ Preencha o campo "${campoFaltando}" do ${titulo}.`);
+          const elMap = {
+            'Tipo': card.querySelector('.manut-tipo'),
+            'O que precisa ser feito': card.querySelector('.manut-beb-sub'),
+            'O que precisa ser feito (Pasto)': card.querySelector('.manut-pasto-sub'),
+            'Tipo de limpeza': card.querySelector('.manut-limpeza-tipo-wrap'),
+            'Local (pasto)': card.querySelector('.manut-local'),
+            'Qual máquina': card.querySelector('.manut-qual-maquina'),
+            'Descrição': card.querySelector('.manut-desc'),
+            'Status': card.querySelector('.status-group')
+          };
+          highlightField(elMap[campoFaltando]);
           return false;
         }
-        for(const card of manutCards){
-          if(!isManutencaoCompleta(card)){
-            const titulo = card.querySelector('.item-title').textContent;
-            card.classList.remove('collapsed');
-            document.getElementById('btnAddManutencao').disabled = true;
-            const tipo = card.querySelector('.manut-tipo').value;
-            let campoFaltando = !tipo ? 'Tipo' :
-              (tipo === 'Bebedouro' && !card.querySelector('.manut-beb-btn.selected')) ? 'O que precisa ser feito' :
-              (TIPOS_COM_PASTO.includes(tipo) && card.querySelector('.manut-local').selectedOptions.length === 0) ? 'Local (pasto)' :
-              (tipo === 'Maquina' && !card.querySelector('.manut-qual-maquina').value) ? 'Qual máquina' :
-              !card.querySelector('.manut-desc').value.trim() ? 'Descrição' : 'Status';
-            alert(`⚠️ Preencha o campo "${campoFaltando}" da ${titulo}.`);
-            const elMap = {
-              'Tipo': card.querySelector('.manut-tipo'),
-              'O que precisa ser feito': card.querySelector('.manut-beb-sub'),
-              'Local (pasto)': card.querySelector('.manut-local'),
-              'Qual máquina': card.querySelector('.manut-qual-maquina'),
-              'Descrição': card.querySelector('.manut-desc'),
-              'Status': card.querySelector('.status-group')
-            };
-            highlightField(elMap[campoFaltando]);
-            return false;
-          }
-          if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
-        }
+        if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
       }
     }
     if(n === 8){
@@ -1479,7 +1464,6 @@
       vac: 'vacDetails',
       curral: 'curralDetails',
       mistura: 'misturaDetails',
-      infra: 'infraDetails',
       solic: 'solicDetails'
     };
     document.querySelectorAll('.binary-btn').forEach(btn => {
@@ -1583,9 +1567,10 @@
     });
   }
 
-  // ===================== SEÇÃO 7: INFRAESTRUTURA =====================
+  // ===================== SEÇÃO 7: SERVIÇOS =====================
   const MAQUINAS_NEW = ['Trator','Bomba','Implemento','Roçadeira','Moto/Veículo','Outro'];
-  const TIPOS_COM_PASTO = ['Bebedouro','Cocho','Cerca','Estrada'];
+  const LIMPEZA_PASTO_TIPOS = ['Motofoice','Herbicida','Trator'];
+  const TIPOS_COM_PASTO = ['Pasto','Bebedouro','Cocho','Cerca','Estrada'];
   let manutencaoCount = 0;
 
   function addManutencao(){
@@ -1598,15 +1583,16 @@
     div.innerHTML = `
       <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
       <div class="trat-collapsed-btn" onclick="reabrirManutencao('${id}')">
-        <span>✅ Manutenção <span class="manut-num"></span><span class="manut-tipo-label"></span></span>
+        <span>✅ Serviço <span class="manut-num"></span><span class="manut-tipo-label"></span></span>
         <span class="trat-edit-hint">✏️ Toque para editar</span>
       </div>
       <div class="trat-fields">
-        <div class="item-title">🔧 Manutenção <span class="manut-num"></span></div>
+        <div class="item-title">🔧 Serviço <span class="manut-num"></span></div>
         <div class="field">
           <label>Tipo</label>
           <select class="manut-tipo" onchange="onTipoManutencaoChange(this)">
             <option value="">Selecione...</option>
+            <option value="Pasto">Pasto</option>
             <option value="Bebedouro">Bebedouro</option>
             <option value="Cocho">Cocho</option>
             <option value="Cerca">Cerca</option>
@@ -1622,6 +1608,20 @@
             <button type="button" class="choice-btn manut-beb-btn" data-value="Limpeza" onclick="selectChoice(this)">🧹 Limpeza</button>
             <button type="button" class="choice-btn manut-beb-btn" data-value="Manutenção" onclick="selectChoice(this)">🔧 Manutenção</button>
           </div>
+        </div>
+        <div class="field manut-pasto-sub" style="display:none;">
+          <label>O que precisa ser feito?</label>
+          <div class="btn-group">
+            <button type="button" class="choice-btn manut-pasto-sub-btn" data-value="Limpeza" onclick="selectPastoSub(this)">🧹 Limpeza</button>
+            <button type="button" class="choice-btn manut-pasto-sub-btn" data-value="Plantio" onclick="selectPastoSub(this)">🌱 Plantio</button>
+          </div>
+        </div>
+        <div class="field manut-limpeza-tipo-wrap" style="display:none;">
+          <label>Tipo de limpeza</label>
+          <select class="manut-limpeza-tipo">
+            <option value="">— selecione —</option>
+            ${LIMPEZA_PASTO_TIPOS.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
         </div>
         <div class="field manut-pasto-wrap" style="display:none;">
           <label>Local (pasto)</label>
@@ -1669,16 +1669,31 @@
     div.querySelector('.manut-desc').addEventListener('input', atualizarStatusBtns);
     div.querySelector('.manut-qual-maquina').addEventListener('change', checarConclusao);
     div.querySelector('.manut-local').addEventListener('change', checarConclusao);
+    div.querySelector('.manut-limpeza-tipo').addEventListener('change', checarConclusao);
     div.querySelectorAll('.status-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
     div.querySelectorAll('.manut-beb-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
+    div.querySelectorAll('.manut-pasto-sub-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
 
     document.getElementById('btnAddManutencao').disabled = true;
+  }
+
+  function selectPastoSub(btn){
+    selectChoice(btn);
+    const card = btn.closest('.item-card');
+    const isLimpeza = btn.dataset.value === 'Limpeza';
+    card.querySelector('.manut-limpeza-tipo-wrap').style.display = isLimpeza ? 'block' : 'none';
+    if(!isLimpeza) card.querySelector('.manut-limpeza-tipo').value = '';
   }
 
   function isManutencaoCompleta(div){
     const tipo = div.querySelector('.manut-tipo').value;
     if(!tipo) return false;
     if(tipo === 'Bebedouro' && !div.querySelector('.manut-beb-btn.selected')) return false;
+    if(tipo === 'Pasto'){
+      const sub = div.querySelector('.manut-pasto-sub-btn.selected');
+      if(!sub) return false;
+      if(sub.dataset.value === 'Limpeza' && !div.querySelector('.manut-limpeza-tipo').value) return false;
+    }
     if(TIPOS_COM_PASTO.includes(tipo) && div.querySelector('.manut-local').selectedOptions.length === 0) return false;
     if(tipo === 'Maquina' && !div.querySelector('.manut-qual-maquina').value) return false;
     if(!div.querySelector('.manut-desc').value.trim()) return false;
@@ -1703,6 +1718,13 @@
 
     card.querySelector('.manut-beb-sub').style.display = tipo === 'Bebedouro' ? 'block' : 'none';
     if(tipo !== 'Bebedouro') card.querySelectorAll('.manut-beb-btn').forEach(b => b.classList.remove('selected'));
+
+    card.querySelector('.manut-pasto-sub').style.display = tipo === 'Pasto' ? 'block' : 'none';
+    if(tipo !== 'Pasto'){
+      card.querySelectorAll('.manut-pasto-sub-btn').forEach(b => b.classList.remove('selected'));
+      card.querySelector('.manut-limpeza-tipo-wrap').style.display = 'none';
+      card.querySelector('.manut-limpeza-tipo').value = '';
+    }
 
     const pastoWrap = card.querySelector('.manut-pasto-wrap');
     const maquinaWrap = card.querySelector('.manut-maquina-wrap');
@@ -2019,28 +2041,29 @@
     }
     r += `\n`;
 
-    // Seção 7 - Infraestrutura
-    r += `🔧 INFRAESTRUTURA\n`;
-    const infraSim = document.querySelector('.binary-btn[data-group="infra"][data-value="sim"].selected');
-    if(infraSim){
-      const cards = document.querySelectorAll('#manutencoesList .item-card');
-      if(cards.length === 0) r += `Nenhuma manutenção registrada.\n`;
-      cards.forEach((card, i) => {
+    // Seção 7 - Serviços
+    r += `🔧 SERVIÇOS\n`;
+    const manutResumoCards = document.querySelectorAll('#manutencoesList .item-card');
+    if(manutResumoCards.length === 0){
+      r += `Nenhum serviço necessário hoje.\n`;
+    } else {
+      manutResumoCards.forEach((card, i) => {
         const tipoEl = card.querySelector('.manut-tipo');
         const tipo = tipoEl.options[tipoEl.selectedIndex]?.text || '-';
         const bebAtividade = card.querySelector('.manut-beb-btn.selected');
+        const pastoSub = card.querySelector('.manut-pasto-sub-btn.selected');
+        const limpezaTipo = card.querySelector('.manut-limpeza-tipo').value;
         const pastos = Array.from(card.querySelector('.manut-local').selectedOptions).map(o => o.value);
         const qualMaquina = card.querySelector('.manut-qual-maquina').value;
         const desc = card.querySelector('.manut-desc').value || '-';
         const status = card.querySelector('.status-btn.selected');
-        r += `- Manutenção ${i+1}: Tipo: ${tipo}`;
+        r += `- Serviço ${i+1}: Tipo: ${tipo}`;
         if(bebAtividade) r += ` (${bebAtividade.dataset.value})`;
+        if(pastoSub) r += ` (${pastoSub.dataset.value}${limpezaTipo ? ' - ' + limpezaTipo : ''})`;
         if(pastos.length) r += ` | Local: ${pastos.join(', ')}`;
         if(qualMaquina) r += ` | Máquina: ${qualMaquina}`;
         r += ` | Descrição: ${desc} | Status: ${status ? status.dataset.value : '-'}\n`;
       });
-    } else {
-      r += `Nenhuma manutenção necessária hoje.\n`;
     }
     r += `\n`;
 
