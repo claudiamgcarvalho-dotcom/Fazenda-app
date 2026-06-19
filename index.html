@@ -797,8 +797,32 @@
       </div>
     </section>
 
-    <!-- ============ SEÇÃO 9: FECHAMENTO ============ -->
+    <!-- ============ SEÇÃO 9: ENTRADA/SAÍDA DE PRODUTOS ============ -->
     <section class="form-section" data-section="9">
+      <div class="section-header">
+        <div class="section-icon">🔄</div>
+        <div>
+          <h2>Entrada/Saída de Produtos</h2>
+          <div class="section-sub">Produtos que chegaram ou saíram da fazenda</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Houve entrada ou saída de produtos hoje?</label>
+        <div class="btn-group">
+          <button type="button" class="binary-btn" data-group="movimento" data-value="sim">✅ Sim</button>
+          <button type="button" class="binary-btn" data-group="movimento" data-value="nao">❌ Não</button>
+        </div>
+      </div>
+
+      <div id="movimentoDetails" style="display:none;">
+        <div id="movimentosList"></div>
+        <button type="button" class="add-btn" id="btnAddMovimento" onclick="addMovimento()">➕ Adicionar Movimentação</button>
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO 10: FECHAMENTO ============ -->
+    <section class="form-section" data-section="10">
       <div class="section-header">
         <div class="section-icon">✅</div>
         <div>
@@ -835,7 +859,7 @@
     </section>
 
     <!-- ============ RESUMO FINAL ============ -->
-    <section class="form-section" id="summarySection" data-section="10">
+    <section class="form-section" id="summarySection" data-section="11">
       <h2>Resumo Concluído!</h2>
       <div id="reportText"></div>
       <div class="summary-actions">
@@ -873,9 +897,9 @@
   const VACINA_PRODUTOS = ['Raiva','Mal de Ano','Brucelose','Aftosa','Reprodutiva','Pneumonia'];
 
   // ===================== CONFIG GERAL =====================
-  const totalSections = 9;
-  const sectionNames = ["Identificação","Conferência de Rebanho","Sanidade Animal","Vacinas e Vermífugos","Atividades no Curral","Nutrição e Misturas","Serviços","Solicitações de Produtos","Fechamento"];
-  const sectionIcons = ["🪪","🐄","🩺","💉","🐂","🌾","🔧","📦","✅"];
+  const totalSections = 10;
+  const sectionNames = ["Identificação","Conferência de Rebanho","Sanidade Animal","Vacinas e Vermífugos","Atividades no Curral","Nutrição e Misturas","Serviços","Solicitações de Produtos","Entrada/Saída de Produtos","Fechamento"];
+  const sectionIcons = ["🪪","🐄","🩺","💉","🐂","🌾","🔧","📦","🔄","✅"];
   let currentSection = 1;
   let currentFazenda = '';
 
@@ -1222,6 +1246,37 @@
       }
     }
     if(n === 9){
+      if(!document.querySelector('.binary-btn[data-group="movimento"].selected')){
+        alert('⚠️ Por favor, informe se houve entrada ou saída de produtos hoje.');
+        highlightField(document.querySelector('.binary-btn[data-group="movimento"]').parentElement);
+        return false;
+      }
+      if(document.querySelector('.binary-btn[data-group="movimento"][data-value="sim"].selected')){
+        const movCards = document.querySelectorAll('#movimentosList .item-card');
+        if(movCards.length === 0){
+          alert('⚠️ Adicione pelo menos uma movimentação.');
+          highlightField(document.getElementById('btnAddMovimento'));
+          return false;
+        }
+        for(const card of movCards){
+          if(!isMovimentoCompleto(card)){
+            card.classList.remove('collapsed');
+            document.getElementById('btnAddMovimento').disabled = true;
+            const tipo = card.querySelector('.mov-tipo-btn.selected');
+            const produto = card.querySelector('.mov-produto');
+            const qtd = card.querySelector('.mov-qtd');
+            const local = card.querySelector('.mov-local');
+            if(!tipo){ alert('⚠️ Selecione o Tipo (Entrada ou Saída).'); highlightField(card.querySelector('.mov-tipo-group')); return false; }
+            if(!produto.value.trim()){ alert('⚠️ Preencha o Produto.'); highlightField(produto); return false; }
+            if(!qtd.value.trim()){ alert('⚠️ Preencha a Quantidade.'); highlightField(qtd); return false; }
+            if(!local.value.trim()){ alert(`⚠️ Preencha o campo "${tipo.dataset.value === 'Entrada' ? 'De onde veio' : 'Para onde foi'}".`); highlightField(local); return false; }
+            return false;
+          }
+          if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
+        }
+      }
+    }
+    if(n === 10){
       const cards = document.querySelectorAll('#equipeList .equipe-card');
       for(const card of cards){
         if(!card.querySelector('.attend-btn.selected')){
@@ -1482,7 +1537,8 @@
       vac: 'vacDetails',
       curral: 'curralDetails',
       mistura: 'misturaDetails',
-      solic: 'solicDetails'
+      solic: 'solicDetails',
+      movimento: 'movimentoDetails'
     };
     document.querySelectorAll('.binary-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1928,6 +1984,94 @@
     btn.classList.add('selected');
   }
 
+  // ===================== SEÇÃO 9: ENTRADA/SAÍDA DE PRODUTOS =====================
+  let movimentoCount = 0;
+  function addMovimento(){
+    movimentoCount++;
+    const n = movimentoCount;
+    const id = 'mov' + n;
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
+      <div class="trat-collapsed-btn" onclick="reabrirMovimento('${id}')">
+        <span>✅ Movimentação <span class="mov-num"></span></span><span class="trat-edit-hint">✏️ Toque para editar</span>
+      </div>
+      <div class="trat-fields">
+        <div class="item-title">🔄 Movimentação <span class="mov-num"></span></div>
+        <div class="field mov-tipo-group">
+          <label>Tipo</label>
+          <div class="btn-group">
+            <button type="button" class="choice-btn mov-tipo-btn" data-value="Entrada" onclick="selectTipoMovimento(this)">📥 Entrada</button>
+            <button type="button" class="choice-btn mov-tipo-btn" data-value="Saída" onclick="selectTipoMovimento(this)">📤 Saída</button>
+          </div>
+        </div>
+        <div class="field"><label>Produto</label><input type="text" class="mov-produto" placeholder="Ex: Sal mineral, arame liso"></div>
+        <div class="field"><label>Quantidade</label><input type="text" class="mov-qtd" placeholder="Ex: 10 sacos, 50 kg"></div>
+        <div class="field mov-local-wrap" style="display:none;">
+          <label class="mov-local-label">De onde veio / Para onde foi</label>
+          <input type="text" class="mov-local" placeholder="">
+        </div>
+        <button type="button" class="btn-confirmar">✔ Confirmar Movimentação</button>
+      </div>
+    `;
+    document.getElementById('movimentosList').appendChild(div);
+    renumberMovimentos();
+
+    div.querySelector('.btn-confirmar').addEventListener('click', () => {
+      const tipoBtn = div.querySelector('.mov-tipo-btn.selected');
+      if(!tipoBtn){
+        alert('⚠️ Selecione o Tipo (Entrada ou Saída) antes de confirmar.');
+        highlightField(div.querySelector('.mov-tipo-group'));
+        return;
+      }
+      const campos = [
+        {el: div.querySelector('.mov-produto'), label: 'Produto'},
+        {el: div.querySelector('.mov-qtd'),     label: 'Quantidade'},
+        {el: div.querySelector('.mov-local'),   label: tipoBtn.dataset.value === 'Saída' ? 'Para onde foi' : 'De onde veio'}
+      ];
+      const vazio = campos.find(c => !c.el.value.trim());
+      if(vazio){
+        alert(`⚠️ Preencha o campo "${vazio.label}" antes de confirmar.`);
+        highlightField(vazio.el);
+        return;
+      }
+      div.classList.add('collapsed');
+      document.getElementById('btnAddMovimento').disabled = false;
+    });
+
+    document.getElementById('btnAddMovimento').disabled = true;
+  }
+
+  function selectTipoMovimento(btn){
+    selectChoice(btn);
+    const card = btn.closest('.item-card');
+    const isEntrada = btn.dataset.value === 'Entrada';
+    card.querySelector('.mov-local-wrap').style.display = 'block';
+    card.querySelector('.mov-local-label').textContent = isEntrada ? 'De onde veio' : 'Para onde foi';
+    card.querySelector('.mov-local').placeholder = isEntrada ? 'Ex: Loja Agropecuária Central' : 'Ex: Fazenda Pedra Bonita';
+  }
+
+  function isMovimentoCompleto(div){
+    if(!div.querySelector('.mov-tipo-btn.selected')) return false;
+    if(!div.querySelector('.mov-produto').value.trim()) return false;
+    if(!div.querySelector('.mov-qtd').value.trim()) return false;
+    if(!div.querySelector('.mov-local').value.trim()) return false;
+    return true;
+  }
+
+  function reabrirMovimento(id){
+    document.getElementById(id).classList.remove('collapsed');
+    document.getElementById('btnAddMovimento').disabled = true;
+  }
+
+  function renumberMovimentos(){
+    document.querySelectorAll('#movimentosList .item-card').forEach((card, i) => {
+      card.querySelectorAll('.mov-num').forEach(el => el.textContent = i + 1);
+    });
+  }
+
   // ===================== UTIL =====================
   function removeItem(id){
     const el = document.getElementById(id);
@@ -1959,6 +2103,11 @@
       renumberProdutos();
       const aberto = document.querySelector('#produtosList .item-card:not(.collapsed)');
       document.getElementById('btnAddProduto').disabled = !!aberto;
+    }
+    if(parentId === 'movimentosList'){
+      renumberMovimentos();
+      const aberto = document.querySelector('#movimentosList .item-card:not(.collapsed)');
+      document.getElementById('btnAddMovimento').disabled = !!aberto;
     }
   }
 
@@ -2119,7 +2268,25 @@
     }
     r += `\n`;
 
-    // Seção 9 - Fechamento
+    // Seção 9 - Entrada/Saída de Produtos
+    r += `🔄 ENTRADA/SAÍDA DE PRODUTOS\n`;
+    const movSim = document.querySelector('.binary-btn[data-group="movimento"][data-value="sim"].selected');
+    if(movSim){
+      document.querySelectorAll('#movimentosList .item-card').forEach((card, i) => {
+        const tipoBtn = card.querySelector('.mov-tipo-btn.selected');
+        const tipo = tipoBtn ? tipoBtn.dataset.value : '-';
+        const produto = card.querySelector('.mov-produto').value || '-';
+        const qtd = card.querySelector('.mov-qtd').value || '-';
+        const local = card.querySelector('.mov-local').value || '-';
+        const localLabel = tipoBtn && tipoBtn.dataset.value === 'Saída' ? 'Para onde foi' : 'De onde veio';
+        r += `- ${tipo}: ${produto} | Qtd: ${qtd} | ${localLabel}: ${local}\n`;
+      });
+    } else {
+      r += `Nenhuma entrada ou saída de produtos hoje.\n`;
+    }
+    r += `\n`;
+
+    // Seção 10 - Fechamento
     r += `✅ FECHAMENTO\n`;
     r += `Trator: ${document.getElementById('tratorIni').value || '--:--'} às ${document.getElementById('tratorFim').value || '--:--'}\n`;
     r += `Bomba d'água: ${document.getElementById('bombaIni').value || '--:--'} às ${document.getElementById('bombaFim').value || '--:--'}\n`;
