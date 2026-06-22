@@ -1100,7 +1100,8 @@
           const campos = [
             {el: card.querySelector('.vac-produto'), label: 'Nome do Produto'},
             {el: card.querySelector('.vac-qtd'), label: 'Quantidade de Animais'},
-            {el: card.querySelector('.vac-categoria'), label: 'Categoria Animal'}
+            {el: card.querySelector('.vac-categoria'), label: 'Categoria Animal'},
+            {el: card.querySelector('.vac-dose'), label: 'Dose aplicada'}
           ];
           const vazio = campos.find(c => !c.el.value.trim());
         if(vazio){
@@ -1474,12 +1475,28 @@
           ${vacProdutoFieldHTML('Vacina')}
         </div>
         <div class="field"><label>Quantidade de Animais por categoria</label><input type="number" min="0" inputmode="numeric" class="vac-qtd" placeholder="0"></div>
-        <div class="field" style="margin-bottom:0;">
+        <div class="field">
           <label>Categoria Animal</label>
           <select class="vac-categoria">
             <option value="">— selecione —</option>
             ${CATEGORIAS_ANIMAL.map(c => `<option value="${c}">${c}</option>`).join('')}
           </select>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Dose aplicada</label>
+          <div class="half-fields">
+            <div class="half-field">
+              <label>Volume</label>
+              <input type="number" min="0" step="0.1" inputmode="decimal" class="vac-dose" placeholder="Ex: 5">
+            </div>
+            <div class="half-field">
+              <label>Unidade</label>
+              <select class="vac-dose-unidade">
+                <option value="ml">ml</option>
+                <option value="ml/kg">ml/kg</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -1490,7 +1507,8 @@
       const produto = div.querySelector('.vac-produto').value.trim();
       const qtd = div.querySelector('.vac-qtd').value;
       const categoria = div.querySelector('.vac-categoria').value;
-      if(produto && qtd !== '' && categoria){
+      const dose = div.querySelector('.vac-dose').value;
+      if(produto && qtd !== '' && categoria && dose !== ''){
         div.classList.add('collapsed');
         document.getElementById('btnAddVacina').disabled = false;
       }
@@ -1513,6 +1531,9 @@
     div.querySelector('.vac-qtd').addEventListener('change', checarConclusao);
     div.querySelector('.vac-qtd').addEventListener('blur', checarConclusao);
     div.querySelector('.vac-categoria').addEventListener('change', checarConclusao);
+    div.querySelector('.vac-dose').addEventListener('change', checarConclusao);
+    div.querySelector('.vac-dose').addEventListener('blur', checarConclusao);
+    div.querySelector('.vac-dose-unidade').addEventListener('change', checarConclusao);
 
     document.getElementById('btnAddVacina').disabled = true;
   }
@@ -1864,6 +1885,7 @@
     'Material de infraestrutura':{desc: 'Ex: Arame, Mourão, Cimento, Pregos',          qtd: 'Ex: 5 rolos, 20 unidades'},
     'Serviço externo':           {desc: 'Ex: Conserto de..., Veterinário, Mecânico',   qtd: 'Ex: 1 visita'},
     'Equipamento / máquina':     {desc: 'Ex: Bomba, Roçadeira, Peça de reposição',      qtd: 'Ex: 1 unidade'},
+    'Combustível / Óleo':        {desc: 'Ex: Diesel S10, Óleo hidráulico, Graxa',       qtd: 'Ex: 200 litros, 5 galões'},
     'Outro':                     {desc: 'Ex: Descreva o produto ou serviço',            qtd: 'Ex: Informe a quantidade'}
   };
 
@@ -1892,6 +1914,7 @@
             <option>Material de infraestrutura</option>
             <option>Serviço externo</option>
             <option>Equipamento / máquina</option>
+            <option>Combustível / Óleo</option>
             <option>Outro</option>
           </select>
         </div>
@@ -2168,7 +2191,9 @@
         const produto = card.querySelector('.vac-produto').value;
         const qtd = card.querySelector('.vac-qtd').value;
         const categoria = card.querySelector('.vac-categoria').value;
-        r += `- ${tipo}: ${produto || '-'} | Qtd Animais: ${qtd || '0'}${categoria ? ' | Categoria: ' + categoria : ''}\n`;
+        const dose = card.querySelector('.vac-dose').value;
+        const doseUnidade = card.querySelector('.vac-dose-unidade').value;
+        r += `- ${tipo}: ${produto || '-'} | Qtd Animais: ${qtd || '0'}${categoria ? ' | Categoria: ' + categoria : ''}${dose ? ' | Dose: ' + dose + ' ' + doseUnidade : ''}\n`;
       });
     } else {
       r += `Nenhuma aplicação de vacina/vermífugo hoje.\n`;
