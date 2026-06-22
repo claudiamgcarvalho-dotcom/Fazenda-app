@@ -1101,7 +1101,8 @@
             {el: card.querySelector('.vac-produto'), label: 'Nome do Produto'},
             {el: card.querySelector('.vac-qtd'), label: 'Quantidade de Animais'},
             {el: card.querySelector('.vac-categoria'), label: 'Categoria Animal'},
-            {el: card.querySelector('.vac-dose'), label: 'Dose aplicada'}
+            {el: card.querySelector('.vac-dose'), label: 'Dose aplicada'},
+            {el: card.querySelector('.vac-dose-unidade'), label: 'Unidade da dose'}
           ];
           const vazio = campos.find(c => !c.el.value.trim());
         if(vazio){
@@ -1492,6 +1493,7 @@
             <div class="half-field">
               <label>Unidade</label>
               <select class="vac-dose-unidade">
+                <option value="">— selecione —</option>
                 <option value="ml">ml</option>
                 <option value="ml/kg">ml/kg</option>
               </select>
@@ -1508,7 +1510,8 @@
       const qtd = div.querySelector('.vac-qtd').value;
       const categoria = div.querySelector('.vac-categoria').value;
       const dose = div.querySelector('.vac-dose').value;
-      if(produto && qtd !== '' && categoria && dose !== ''){
+      const doseUnidade = div.querySelector('.vac-dose-unidade').value;
+      if(produto && qtd !== '' && categoria && dose !== '' && doseUnidade !== ''){
         div.classList.add('collapsed');
         document.getElementById('btnAddVacina').disabled = false;
       }
