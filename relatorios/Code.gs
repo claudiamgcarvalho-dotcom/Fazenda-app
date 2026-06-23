@@ -3,12 +3,13 @@
 // "Fazenda App - Relatórios Diários" e implante como "App da Web"
 // (executar como "Eu", acesso "Qualquer pessoa com o link").
 //
-// Cada fazenda tem sua própria aba (CB, PB, SH), criada automaticamente na
-// primeira gravação. Se o envio chegar sem o código da fazenda (ex.: ela não
-// foi selecionada no formulário), a linha cai na aba "RelatoriosDiarios" em
-// vez de se perder, para facilitar identificar o problema.
+// Cada fazenda ganha sua própria aba, criada automaticamente com o código
+// que vier no envio (CB, PB, SH, ou qualquer fazenda nova cadastrada depois
+// — não precisa editar este script quando uma fazenda nova for cadastrada).
+// Se o envio chegar sem o código da fazenda (não deveria acontecer, já que o
+// campo é obrigatório no formulário), a linha cai na aba "RelatoriosDiarios"
+// em vez de se perder, para facilitar identificar o problema.
 
-var FARM_CODES = ['CB', 'PB', 'SH'];
 var FALLBACK_SHEET_NAME = 'RelatoriosDiarios';
 var HEADERS = ['Timestamp', 'ID', 'Data', 'Fazenda', 'Responsavel', 'ResumoTexto', 'DadosJSON'];
 
@@ -21,7 +22,7 @@ function doPost(e) {
     dados = {};
   }
 
-  var fazenda = dados.fazenda || '';
+  var fazenda = (dados.fazenda || '').trim();
   var sheet = getOrCreateSheet(fazenda);
   var id = [dados.data || '', fazenda || 'SEM_FAZENDA', new Date().getTime()].join('_');
 
@@ -41,7 +42,7 @@ function doPost(e) {
 
 function getOrCreateSheet(fazenda) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var nomeAba = FARM_CODES.indexOf(fazenda) >= 0 ? fazenda : FALLBACK_SHEET_NAME;
+  var nomeAba = fazenda || FALLBACK_SHEET_NAME;
   var sheet = ss.getSheetByName(nomeAba);
   if (!sheet) {
     sheet = ss.insertSheet(nomeAba);
