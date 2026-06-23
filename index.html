@@ -527,6 +527,19 @@
   .btn-whatsapp{background:#25D366;color:#fff;}
   .btn-copy{background:var(--light-green);color:#fff;}
   .btn-new{background:#394A59;color:#fff;}
+  .sync-status{
+    display:flex;align-items:center;gap:8px;
+    padding:12px 16px;border-radius:12px;margin-bottom:16px;
+    font-size:14px;font-weight:600;
+  }
+  .sync-status.sync-sending{background:#FFF6DD;color:#8a6d1d;}
+  .sync-status.sync-ok{background:#E3F6EC;color:#1d7a4c;}
+  .sync-status.sync-error{background:#FDE8E8;color:#a32a2a;}
+  .btn-retry{
+    margin-left:auto;background:var(--urgente);color:#fff;
+    border:none;border-radius:8px;padding:8px 12px;font-size:13px;
+    font-weight:700;cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -861,6 +874,7 @@
     <!-- ============ RESUMO FINAL ============ -->
     <section class="form-section" id="summarySection" data-section="11">
       <h2>Resumo Concluído!</h2>
+      <div id="syncStatus" class="sync-status sync-sending" style="display:none;"></div>
       <div id="reportText"></div>
       <div class="summary-actions">
         <button class="btn-whatsapp" onclick="enviarWhatsApp()">📲 Enviar pelo WhatsApp</button>
@@ -902,6 +916,10 @@
   const sectionIcons = ["🪪","🐄","🩺","💉","🐂","🌾","🔧","📦","🔄","✅"];
   let currentSection = 1;
   let currentFazenda = '';
+
+  // URL do Web App do Apps Script da planilha "Fazenda App - Relatórios Diários"
+  // (Extensões > Apps Script > Implantar > Nova implantação > App da Web).
+  const API_URL_RELATORIOS = 'https://script.google.com/macros/s/AKfycbwnvVXB0iZ-nV0z9Rm2hx1ArBd8vjWnoiRpUOCw5q0F6rJ580lEPGk7mJIe0ffX_tSs/exec';
 
   // ===================== INIT =====================
   document.addEventListener('DOMContentLoaded', () => {
@@ -954,6 +972,7 @@
       if(!validateSection(currentSection)) return;
       if(currentSection === totalSections){
         gerarResumo();
+        enviarParaBancoDeDados();
       }
       currentSection++;
       updateUI();
@@ -2139,55 +2158,75 @@
   // ===================== GERAR RESUMO =====================
   function gerarResumo(){
     let r = '';
+    const dados = {};
     r += `🌱 RESUMO DIÁRIO DA FAZENDA\n`;
     r += `==============================\n\n`;
 
     // Seção 1 - Identificação
     r += `🪪 IDENTIFICAÇÃO\n`;
-    r += `Data: ${formatarData(document.getElementById('dataRegistro').value)}\n`;
+    const dataRegistro = document.getElementById('dataRegistro').value;
+    const responsavel = document.getElementById('responsavel').value;
+    r += `Data: ${formatarData(dataRegistro)}\n`;
     r += `Fazenda: ${currentFazenda || '-'}\n`;
-    r += `Responsável: ${document.getElementById('responsavel').value || '-'}\n`;
+    r += `Responsável: ${responsavel || '-'}\n`;
     const bv = [
       ['bvChoveu','Choveu'],['bvMudei','Mudei o gado de pasto'],['bvNutricao','Distribuí nutrição'],
       ['bvNascimento','Nascimento'],['bvAborto','Aborto / Natimorto'],['bvMorte','Morreu animal']
     ].filter(([id]) => document.getElementById(id).checked).map(([,label]) => label);
     r += `Boi Virtual: ${bv.length ? bv.join(', ') : 'Nenhuma atividade marcada'}\n\n`;
+    dados.data = dataRegistro;
+    dados.fazenda = currentFazenda;
+    dados.responsavel = responsavel;
+    dados.boiVirtual = bv;
 
     // Seção 2 - Conferência de Rebanho
     r += `🐄 CONFERÊNCIA DE REBANHO\n`;
     const conferiuBtn = document.querySelector('.conferiu-btn.selected');
     const conferiuLabel = {todo:'Sim — gado todo', parte:'Sim — parte do gado', nao:'Não conferi'};
     r += `Conferiu o gado: ${conferiuBtn ? conferiuLabel[conferiuBtn.dataset.value] : '-'}\n`;
-    r += `Total Esperado: ${document.getElementById('totalEsperado2').value || '0'}\n`;
-    r += `Total Encontrado: ${document.getElementById('totalEncontrado2').value || '0'}\n`;
+    const totalEsperado = document.getElementById('totalEsperado2').value;
+    const totalEncontrado = document.getElementById('totalEncontrado2').value;
+    r += `Total Esperado: ${totalEsperado || '0'}\n`;
+    r += `Total Encontrado: ${totalEncontrado || '0'}\n`;
+    let qtdFaltou = '', pastosDiv = [];
     if(document.getElementById('divergDetails').style.display !== 'none'){
-      r += `Faltaram: ${document.getElementById('qtdFaltou').value}\n`;
-      const pastosDiv = Array.from(document.getElementById('pastoList2').selectedOptions).map(o => o.value);
+      qtdFaltou = document.getElementById('qtdFaltou').value;
+      pastosDiv = Array.from(document.getElementById('pastoList2').selectedOptions).map(o => o.value);
+      r += `Faltaram: ${qtdFaltou}\n`;
       r += `Pasto(s) com diferença: ${pastosDiv.length ? pastosDiv.join(', ') : 'Não informado'}\n`;
     }
     const obsRebanho = document.getElementById('obsRebanho').value;
     if(obsRebanho) r += `Observações: ${obsRebanho}\n`;
     r += `\n`;
+    dados.conferenciaRebanho = {
+      conferiu: conferiuBtn ? conferiuBtn.dataset.value : null,
+      totalEsperado, totalEncontrado, qtdFaltou, pastosDivergentes: pastosDiv,
+      observacoes: obsRebanho
+    };
 
     // Seção 3 - Sanidade Animal
     r += `🩺 SANIDADE ANIMAL\n`;
     const tratSim = document.querySelector('.binary-btn[data-group="trat"][data-value="sim"].selected');
+    const tratamentos = [];
     if(tratSim){
       document.querySelectorAll('#tratamentosList .item-card').forEach(card => {
         const animal = card.querySelector('.trat-animal').value;
         const problema = card.querySelector('.trat-problema').value;
         const aplicado = card.querySelector('.trat-aplicado').value;
-        const responsavel = card.querySelector('.trat-responsavel').value;
-        r += `- Animal: ${animal || '-'} | Problema: ${problema || '-'} | Tratamento: ${aplicado || '-'} | Responsável: ${responsavel || '-'}\n`;
+        const responsavelTrat = card.querySelector('.trat-responsavel').value;
+        r += `- Animal: ${animal || '-'} | Problema: ${problema || '-'} | Tratamento: ${aplicado || '-'} | Responsável: ${responsavelTrat || '-'}\n`;
+        tratamentos.push({ animal, problema, tratamentoAplicado: aplicado, responsavel: responsavelTrat });
       });
     } else {
       r += `Nenhum animal doente ou medicado hoje.\n`;
     }
     r += `\n`;
+    dados.sanidadeAnimal = { houveTratamento: !!tratSim, tratamentos };
 
     // Seção 4 - Vacinas e Vermífugos
     r += `💉 VACINAS E VERMÍFUGOS\n`;
     const vacSim = document.querySelector('.binary-btn[data-group="vac"][data-value="sim"].selected');
+    const vacinas = [];
     if(vacSim){
       document.querySelectorAll('#vacinasList .item-card').forEach(card => {
         const tipo = card.querySelector('.vac-tipo').value;
@@ -2197,15 +2236,18 @@
         const dose = card.querySelector('.vac-dose').value;
         const doseUnidade = card.querySelector('.vac-dose-unidade').value;
         r += `- ${tipo}: ${produto || '-'} | Qtd Animais: ${qtd || '0'}${categoria ? ' | Categoria: ' + categoria : ''}${dose ? ' | Dose: ' + dose + ' ' + doseUnidade : ''}\n`;
+        vacinas.push({ tipo, produto, qtdAnimais: qtd, categoria, dose, doseUnidade });
       });
     } else {
       r += `Nenhuma aplicação de vacina/vermífugo hoje.\n`;
     }
     r += `\n`;
+    dados.vacinasVermifugos = { houveAplicacao: !!vacSim, itens: vacinas };
 
     // Seção 5 - Atividades no Curral
     r += `🐂 ATIVIDADES NO CURRAL\n`;
     const curralSim = document.querySelector('.binary-btn[data-group="curral"][data-value="sim"].selected');
+    let curralInfo = { houveAtividade: !!curralSim, atividades: [], categorias: [], quantidade: '', observacoes: '' };
     if(curralSim){
       const atividades = [
         ['atvManejo','Manejo Geral do Gado'],['atvPesagem','Pesagem de Animais'],['atvSeparacao','Separação de Lotes'],
@@ -2215,17 +2257,21 @@
       r += `Atividades: ${atividades.length ? atividades.join(', ') : 'Nenhuma marcada'}\n`;
       const categorias = Array.from(document.getElementById('curralCategorias').selectedOptions).map(o => o.value);
       r += `Categorias trabalhadas: ${categorias.length ? categorias.join(', ') : '-'}\n`;
-      r += `Quantidade de animais: ${document.getElementById('curralQtd').value || '0'}\n`;
+      const curralQtd = document.getElementById('curralQtd').value;
+      r += `Quantidade de animais: ${curralQtd || '0'}\n`;
       const curralObs = document.getElementById('curralObs').value;
       if(curralObs) r += `Observações: ${curralObs}\n`;
+      curralInfo = { houveAtividade: true, atividades, categorias, quantidade: curralQtd, observacoes: curralObs };
     } else {
       r += `Nenhuma atividade no curral hoje.\n`;
     }
     r += `\n`;
+    dados.atividadesCurral = curralInfo;
 
     // Seção 6 - Nutrição e Misturas
     r += `🌾 NUTRIÇÃO E MISTURAS\n`;
     const mixSim = document.querySelector('.binary-btn[data-group="mistura"][data-value="sim"].selected');
+    const misturas = [];
     if(mixSim){
       document.querySelectorAll('#misturasList .item-card').forEach((card, i) => {
         const campos = [
@@ -2238,15 +2284,20 @@
         ];
         const itens = campos.filter(c => Number(c.val) > 0).map(c => `${c.label} ${c.val}kg`);
         r += `- Mistura ${i+1}: ${itens.length ? itens.join(' | ') : 'Nenhum ingrediente informado'}\n`;
+        const ingredientes = {};
+        campos.forEach(c => { if(Number(c.val) > 0) ingredientes[c.label] = Number(c.val); });
+        misturas.push(ingredientes);
       });
     } else {
       r += `Nenhuma mistura feita hoje.\n`;
     }
     r += `\n`;
+    dados.nutricaoMisturas = { houveMistura: !!mixSim, misturas };
 
     // Seção 7 - Serviços
     r += `🔧 SERVIÇOS\n`;
     const manutResumoCards = document.querySelectorAll('#manutencoesList .item-card');
+    const servicos = [];
     if(manutResumoCards.length === 0){
       r += `Nenhum serviço necessário hoje.\n`;
     } else {
@@ -2266,13 +2317,24 @@
         if(pastos.length) r += ` | Local: ${pastos.join(', ')}`;
         if(qualMaquina) r += ` | Máquina: ${qualMaquina}`;
         r += ` | Descrição: ${desc} | Status: ${status ? status.dataset.value : '-'}\n`;
+        servicos.push({
+          tipo,
+          subtipo: bebAtividade ? bebAtividade.dataset.value : (pastoSub ? pastoSub.dataset.value : null),
+          limpezaTipo: limpezaTipo || null,
+          local: pastos,
+          maquina: qualMaquina || null,
+          descricao: desc,
+          status: status ? status.dataset.value : null
+        });
       });
     }
     r += `\n`;
+    dados.servicos = servicos;
 
     // Seção 8 - Solicitações de Produtos
     r += `📦 SOLICITAÇÕES DE PRODUTOS\n`;
     const solicSim = document.querySelector('.binary-btn[data-group="solic"][data-value="sim"].selected');
+    const solicitacoes = [];
     if(solicSim){
       const cards = document.querySelectorAll('#produtosList .item-card');
       let temProduto = false;
@@ -2287,6 +2349,7 @@
           let urgTexto = urg ? urg.textContent.trim() : '-';
           if(urg && urg.dataset.level === 'outro8' && urgOutro) urgTexto += ` (${urgOutro})`;
           r += `- ${desc || '-'} | Qtd: ${qtd || '-'} | Urgência: ${urgTexto}\n`;
+          solicitacoes.push({ tipo, descricao: desc, quantidade: qtd, urgencia: urgTexto });
         }
       });
       if(!temProduto) r += `Nenhum produto preenchido.\n`;
@@ -2294,10 +2357,12 @@
       r += `Nenhuma solicitação hoje.\n`;
     }
     r += `\n`;
+    dados.solicitacoesProdutos = { houveSolicitacao: !!solicSim, itens: solicitacoes };
 
     // Seção 9 - Entrada/Saída de Produtos
     r += `🔄 ENTRADA/SAÍDA DE PRODUTOS\n`;
     const movSim = document.querySelector('.binary-btn[data-group="movimento"][data-value="sim"].selected');
+    const movimentos = [];
     if(movSim){
       document.querySelectorAll('#movimentosList .item-card').forEach((card, i) => {
         const tipoBtn = card.querySelector('.mov-tipo-btn.selected');
@@ -2306,27 +2371,43 @@
         const produtos = card.querySelector('.mov-produtos').value || '-';
         const localLabel = tipoBtn && tipoBtn.dataset.value === 'Saída' ? 'Para onde foi' : 'De onde veio';
         r += `- ${tipo} | ${localLabel}: ${local}\n  ${produtos.split('\n').join('\n  ')}\n`;
+        movimentos.push({ tipo, local, produtos });
       });
     } else {
       r += `Nenhuma entrada ou saída de produtos hoje.\n`;
     }
     r += `\n`;
+    dados.movimentosProdutos = { houveMovimento: !!movSim, itens: movimentos };
 
     // Seção 10 - Fechamento
     r += `✅ FECHAMENTO\n`;
-    r += `Trator: ${document.getElementById('tratorIni').value || '--:--'} às ${document.getElementById('tratorFim').value || '--:--'}\n`;
-    r += `Bomba d'água: ${document.getElementById('bombaIni').value || '--:--'} às ${document.getElementById('bombaFim').value || '--:--'}\n`;
+    const tratorIni = document.getElementById('tratorIni').value;
+    const tratorFim = document.getElementById('tratorFim').value;
+    const bombaIni = document.getElementById('bombaIni').value;
+    const bombaFim = document.getElementById('bombaFim').value;
+    r += `Trator: ${tratorIni || '--:--'} às ${tratorFim || '--:--'}\n`;
+    r += `Bomba d'água: ${bombaIni || '--:--'} às ${bombaFim || '--:--'}\n`;
     r += `\nEquipe do dia:\n`;
+    const equipe = [];
     document.querySelectorAll('#equipeList .equipe-card').forEach(card => {
       const nome = card.querySelector('.item-title').textContent.replace('👤 ','');
       const attend = card.querySelector('.attend-btn.selected');
       r += `- ${nome}: ${attend ? attend.dataset.value : 'Não informado'}\n`;
+      equipe.push({ nome, presenca: attend ? attend.dataset.value : null });
     });
     const obsGerais = document.getElementById('obsGerais').value;
     if(obsGerais) r += `\nObservações gerais: ${obsGerais}\n`;
+    dados.fechamento = {
+      trator: { inicio: tratorIni, fim: tratorFim },
+      bomba: { inicio: bombaIni, fim: bombaFim },
+      equipe,
+      observacoesGerais: obsGerais
+    };
 
     document.getElementById('reportText').textContent = r;
     window._reportText = r;
+    dados.resumoTexto = r;
+    window._reportData = dados;
   }
 
   function copiarResumo(){
@@ -2340,6 +2421,36 @@
   function enviarWhatsApp(){
     const texto = encodeURIComponent(window._reportText || '');
     window.open(`https://wa.me/?text=${texto}`, '_blank');
+  }
+
+  // ===================== ENVIO PARA O BANCO DE DADOS =====================
+  function enviarParaBancoDeDados(){
+    const dados = window._reportData;
+    const statusEl = document.getElementById('syncStatus');
+    if(!dados){
+      statusEl.style.display = 'none';
+      return;
+    }
+    statusEl.className = 'sync-status sync-sending';
+    statusEl.style.display = 'flex';
+    statusEl.innerHTML = '⏳ Salvando no banco de dados...';
+
+    fetch(API_URL_RELATORIOS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(dados)
+    })
+      .then(res => res.json())
+      .then(json => {
+        if(!json || json.ok !== true) throw new Error('Resposta inesperada da API');
+        statusEl.className = 'sync-status sync-ok';
+        statusEl.innerHTML = '✅ Dados salvos no banco de dados';
+      })
+      .catch(() => {
+        statusEl.className = 'sync-status sync-error';
+        statusEl.innerHTML = '⚠️ Não foi possível salvar. Verifique a internet.' +
+          '<button type="button" class="btn-retry" onclick="enviarParaBancoDeDados()">🔄 Tentar de novo</button>';
+      });
   }
 </script>
 </body>
