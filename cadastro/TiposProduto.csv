@@ -1,0 +1,8 @@
+Nome,DescricaoExemplo,QuantidadeExemplo,FazendasAtivas
+Produto veterinário,"Ex: Ivermectina, Antibiótico, Vermífugo","Ex: 5 frascos, 2 caixas","CB,PB,SH"
+Produto de nutrição,"Ex: Sal mineral, Ureia, Fubá, Soja",Ex: 10 sacos de 30 kg,"CB,PB,SH"
+Material de infraestrutura,"Ex: Arame, Mourão, Cimento, Pregos","Ex: 5 rolos, 20 unidades","CB,PB,SH"
+Serviço externo,"Ex: Conserto de..., Veterinário, Mecânico",Ex: 1 visita,"CB,PB,SH"
+Equipamento / máquina,"Ex: Bomba, Roçadeira, Peça de reposição",Ex: 1 unidade,"CB,PB,SH"
+Combustível / Óleo,"Ex: Diesel S10, Óleo hidráulico, Graxa","Ex: 200 litros, 5 galões","CB,PB,SH"
+Outro,Ex: Descreva o produto ou serviço,Ex: Informe a quantidade,"CB,PB,SH"
