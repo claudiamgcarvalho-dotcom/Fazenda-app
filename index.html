@@ -639,7 +639,7 @@
 
       <div class="field">
         <label>📝 Observações sobre o rebanho</label>
-        <textarea id="obsRebanho" placeholder="Animal doente, fora do lote, perdido, etc."></textarea>
+        <textarea id="obsRebanho" placeholder="Comentar problemas com rebanho"></textarea>
       </div>
     </section>
 
@@ -712,14 +712,14 @@
       <div id="curralDetails" style="display:none;">
         <div class="field">
           <label>Atividades realizadas</label>
-          <label class="checkbox-card"><input type="checkbox" id="atvManejo"><span class="cb-icon">🐄</span><span>Manejo Geral do Gado</span></label>
-          <label class="checkbox-card"><input type="checkbox" id="atvPesagem"><span class="cb-icon">⚖️</span><span>Pesagem de Animais</span></label>
-          <label class="checkbox-card"><input type="checkbox" id="atvSeparacao"><span class="cb-icon">🔀</span><span>Separação de Lotes</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvPesagem"><span class="cb-icon">⚖️</span><span>Pesagem de animais</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvSeparacao"><span class="cb-icon">🔀</span><span>Separação de lotes</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvDesmama"><span class="cb-icon">🍼</span><span>Desmama</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvTatuagem"><span class="cb-icon">🏷️</span><span>Tatuagem ou marcação</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvDescorna"><span class="cb-icon">🪓</span><span>Descorna (mochação)</span></label>
           <label class="checkbox-card"><input type="checkbox" id="atvProtocolo"><span class="cb-icon">📋</span><span>Protocolo de Reprodução</span></label>
           <label class="checkbox-card"><input type="checkbox" id="atvDiagnostico"><span class="cb-icon">🔬</span><span>Diagnóstico</span></label>
-          <label class="checkbox-card"><input type="checkbox" id="atvMedicamentos"><span class="cb-icon">💉</span><span>Aplicação de Medicamentos ou Vacinas</span></label>
-          <label class="checkbox-card"><input type="checkbox" id="atvDescorna"><span class="cb-icon">🪓</span><span>Descorna</span></label>
-          <label class="checkbox-card"><input type="checkbox" id="atvOutras"><span class="cb-icon">➕</span><span>Outras Atividades</span></label>
+          <label class="checkbox-card"><input type="checkbox" id="atvMedicamentos"><span class="cb-icon">💉</span><span>Aplicação de Medicamentos (individual, coletivo, cura de umbigo)</span></label>
         </div>
 
         <div class="field">
@@ -853,6 +853,18 @@
       </div>
 
       <div class="field">
+        <label>Motivo de Uso</label>
+        <p class="hint">Toque e segure (ou deslize) para selecionar mais de um.</p>
+        <select id="tratorMotivo" class="pasto-select-multi" multiple size="4">
+          <option value="Distribuir Nutrição">Distribuir Nutrição</option>
+          <option value="Carregar material">Carregar material</option>
+          <option value="Carregar água">Carregar água</option>
+          <option value="Limpeza de pasto">Limpeza de pasto</option>
+        </select>
+        <div class="multi-preview" id="tratorMotivoPreview">Nenhum selecionado</div>
+      </div>
+
+      <div class="field">
         <label>💧 Bomba d'água</label>
         <div class="half-fields">
           <div class="half-field"><label>Início</label><input type="time" id="bombaIni"></div>
@@ -944,6 +956,10 @@
     document.getElementById('curralCategorias').addEventListener('change', function(){
       const nomes = Array.from(this.selectedOptions).map(o => o.value);
       document.getElementById('categoriasPreview').textContent = nomes.length ? nomes.join(', ') : 'Nenhuma selecionada';
+    });
+    document.getElementById('tratorMotivo').addEventListener('change', function(){
+      const nomes = Array.from(this.selectedOptions).map(o => o.value);
+      document.getElementById('tratorMotivoPreview').textContent = nomes.length ? nomes.join(', ') : 'Nenhum selecionado';
     });
   });
 
@@ -1147,11 +1163,11 @@
         return false;
       }
       if(curralSelecionado.dataset.value === 'sim'){
-        const atvIds = ['atvManejo','atvPesagem','atvSeparacao','atvProtocolo','atvDiagnostico','atvMedicamentos','atvDescorna','atvOutras'];
+        const atvIds = ['atvPesagem','atvSeparacao','atvDesmama','atvTatuagem','atvDescorna','atvProtocolo','atvDiagnostico','atvMedicamentos'];
         const alguma = atvIds.some(id => document.getElementById(id).checked);
         if(!alguma){
           alert('⚠️ Marque ao menos uma "Atividade realizada".');
-          highlightField(document.getElementById('atvManejo').closest('.field'));
+          highlightField(document.getElementById('atvPesagem').closest('.field'));
           return false;
         }
         const categorias = document.getElementById('curralCategorias');
@@ -1179,13 +1195,13 @@
         }
         for(const card of mixCards){
           const campos = MIX_CAMPOS.map(c => ({el: card.querySelector('.' + c.cls), label: c.label}));
-          const vazio = campos.find(c => c.el.value.trim() === '');
-          if(vazio){
+          const algumPreenchido = campos.some(c => c.el.value.trim() !== '');
+          if(!algumPreenchido){
             const titulo = card.querySelector('.item-title').textContent;
             card.classList.remove('collapsed');
             document.getElementById('btnAddMistura').disabled = true;
-            alert(`⚠️ Preencha o campo "${vazio.label}" da ${titulo}.`);
-            highlightField(vazio.el);
+            alert(`⚠️ Preencha ao menos um produto da ${titulo}.`);
+            highlightField(campos[0].el);
             return false;
           }
           if(!card.classList.contains('collapsed')){
@@ -1213,6 +1229,7 @@
             (tipo === 'Bebedouro' && !card.querySelector('.manut-beb-btn.selected')) ? 'O que precisa ser feito' :
             (tipo === 'Pasto' && !pastoSub) ? 'O que precisa ser feito (Pasto)' :
             (tipo === 'Pasto' && pastoSub && pastoSub.dataset.value === 'Limpeza' && !card.querySelector('.manut-limpeza-tipo').value) ? 'Tipo de limpeza' :
+            (tipo === 'Cerca' && card.querySelectorAll('.manut-cerca-btn.selected').length === 0) ? 'Tipo de cerca' :
             (TIPOS_COM_PASTO.includes(tipo) && card.querySelector('.manut-local').selectedOptions.length === 0) ? 'Local (pasto)' :
             (tipo === 'Maquina' && !card.querySelector('.manut-qual-maquina').value) ? 'Qual máquina' :
             !card.querySelector('.manut-desc').value.trim() ? 'Descrição' : 'Status';
@@ -1222,6 +1239,7 @@
             'O que precisa ser feito': card.querySelector('.manut-beb-sub'),
             'O que precisa ser feito (Pasto)': card.querySelector('.manut-pasto-sub'),
             'Tipo de limpeza': card.querySelector('.manut-limpeza-tipo-wrap'),
+            'Tipo de cerca': card.querySelector('.manut-cerca-sub'),
             'Local (pasto)': card.querySelector('.manut-local'),
             'Qual máquina': card.querySelector('.manut-qual-maquina'),
             'Descrição': card.querySelector('.manut-desc'),
@@ -1643,7 +1661,7 @@
     const concluirBtn = div.querySelector('.mix-concluir-btn');
 
     const checarCompleto = () => {
-      const completo = MIX_CAMPOS.every(c => div.querySelector('.' + c.cls).value.trim() !== '');
+      const completo = MIX_CAMPOS.some(c => div.querySelector('.' + c.cls).value.trim() !== '');
       concluirBtn.disabled = !completo;
     };
 
@@ -1720,7 +1738,7 @@
             <option value="Cerca">Cerca</option>
             <option value="Curral">Curral</option>
             <option value="Estrada">Estrada / Acesso</option>
-            <option value="Maquina">Máquina</option>
+            <option value="Maquina">Máquina (manutenção)</option>
             <option value="Outro">Outro</option>
           </select>
         </div>
@@ -1744,6 +1762,15 @@
             <option value="">— selecione —</option>
             ${LIMPEZA_PASTO_TIPOS.map(t => `<option value="${t}">${t}</option>`).join('')}
           </select>
+        </div>
+        <div class="field manut-cerca-sub" style="display:none;">
+          <label>Tipo de cerca</label>
+          <p class="hint">Pode marcar mais de uma opção.</p>
+          <div class="btn-group">
+            <button type="button" class="choice-btn manut-cerca-btn" data-value="Elétrica" onclick="toggleCercaTipo(this)">⚡ Elétrica</button>
+            <button type="button" class="choice-btn manut-cerca-btn" data-value="Liso" onclick="toggleCercaTipo(this)">➖ Liso</button>
+            <button type="button" class="choice-btn manut-cerca-btn" data-value="Farpado" onclick="toggleCercaTipo(this)">🔱 Farpado</button>
+          </div>
         </div>
         <div class="field manut-pasto-wrap" style="display:none;">
           <label>Local (pasto)</label>
@@ -1796,6 +1823,7 @@
     div.querySelectorAll('.status-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
     div.querySelectorAll('.manut-beb-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
     div.querySelectorAll('.manut-pasto-sub-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
+    div.querySelectorAll('.manut-cerca-btn').forEach(b => b.addEventListener('click', () => setTimeout(checarConclusao, 0)));
 
     document.getElementById('btnAddManutencao').disabled = true;
   }
@@ -1817,6 +1845,7 @@
       if(!sub) return false;
       if(sub.dataset.value === 'Limpeza' && !div.querySelector('.manut-limpeza-tipo').value) return false;
     }
+    if(tipo === 'Cerca' && div.querySelectorAll('.manut-cerca-btn.selected').length === 0) return false;
     if(TIPOS_COM_PASTO.includes(tipo) && div.querySelector('.manut-local').selectedOptions.length === 0) return false;
     if(tipo === 'Maquina' && !div.querySelector('.manut-qual-maquina').value) return false;
     if(!div.querySelector('.manut-desc').value.trim()) return false;
@@ -1849,6 +1878,9 @@
       card.querySelector('.manut-limpeza-tipo').value = '';
     }
 
+    card.querySelector('.manut-cerca-sub').style.display = tipo === 'Cerca' ? 'block' : 'none';
+    if(tipo !== 'Cerca') card.querySelectorAll('.manut-cerca-btn').forEach(b => b.classList.remove('selected'));
+
     const pastoWrap = card.querySelector('.manut-pasto-wrap');
     const maquinaWrap = card.querySelector('.manut-maquina-wrap');
     const pastoSel = card.querySelector('.manut-local');
@@ -1869,6 +1901,10 @@
   function selectChoice(btn){
     btn.parentElement.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
+  }
+
+  function toggleCercaTipo(btn){
+    btn.classList.toggle('selected');
   }
 
   function selectStatus(btn){
@@ -2250,9 +2286,9 @@
     let curralInfo = { houveAtividade: !!curralSim, atividades: [], categorias: [], quantidade: '', observacoes: '' };
     if(curralSim){
       const atividades = [
-        ['atvManejo','Manejo Geral do Gado'],['atvPesagem','Pesagem de Animais'],['atvSeparacao','Separação de Lotes'],
-        ['atvProtocolo','Protocolo de Reprodução'],['atvDiagnostico','Diagnóstico'],['atvMedicamentos','Aplicação de Medicamentos ou Vacinas'],
-        ['atvDescorna','Descorna'],['atvOutras','Outras Atividades']
+        ['atvPesagem','Pesagem de animais'],['atvSeparacao','Separação de lotes'],['atvDesmama','Desmama'],
+        ['atvTatuagem','Tatuagem ou marcação'],['atvDescorna','Descorna (mochação)'],['atvProtocolo','Protocolo de Reprodução'],
+        ['atvDiagnostico','Diagnóstico'],['atvMedicamentos','Aplicação de Medicamentos (individual, coletivo, cura de umbigo)']
       ].filter(([id]) => document.getElementById(id).checked).map(([,label]) => label);
       r += `Atividades: ${atividades.length ? atividades.join(', ') : 'Nenhuma marcada'}\n`;
       const categorias = Array.from(document.getElementById('curralCategorias').selectedOptions).map(o => o.value);
@@ -2307,6 +2343,7 @@
         const bebAtividade = card.querySelector('.manut-beb-btn.selected');
         const pastoSub = card.querySelector('.manut-pasto-sub-btn.selected');
         const limpezaTipo = card.querySelector('.manut-limpeza-tipo').value;
+        const cercaTipos = Array.from(card.querySelectorAll('.manut-cerca-btn.selected')).map(b => b.dataset.value);
         const pastos = Array.from(card.querySelector('.manut-local').selectedOptions).map(o => o.value);
         const qualMaquina = card.querySelector('.manut-qual-maquina').value;
         const desc = card.querySelector('.manut-desc').value || '-';
@@ -2314,6 +2351,7 @@
         r += `- Serviço ${i+1}: Tipo: ${tipo}`;
         if(bebAtividade) r += ` (${bebAtividade.dataset.value})`;
         if(pastoSub) r += ` (${pastoSub.dataset.value}${limpezaTipo ? ' - ' + limpezaTipo : ''})`;
+        if(cercaTipos.length) r += ` (${cercaTipos.join(', ')})`;
         if(pastos.length) r += ` | Local: ${pastos.join(', ')}`;
         if(qualMaquina) r += ` | Máquina: ${qualMaquina}`;
         r += ` | Descrição: ${desc} | Status: ${status ? status.dataset.value : '-'}\n`;
@@ -2321,6 +2359,7 @@
           tipo,
           subtipo: bebAtividade ? bebAtividade.dataset.value : (pastoSub ? pastoSub.dataset.value : null),
           limpezaTipo: limpezaTipo || null,
+          tiposCerca: cercaTipos,
           local: pastos,
           maquina: qualMaquina || null,
           descricao: desc,
@@ -2383,9 +2422,10 @@
     r += `✅ FECHAMENTO\n`;
     const tratorIni = document.getElementById('tratorIni').value;
     const tratorFim = document.getElementById('tratorFim').value;
+    const tratorMotivo = Array.from(document.getElementById('tratorMotivo').selectedOptions).map(o => o.value);
     const bombaIni = document.getElementById('bombaIni').value;
     const bombaFim = document.getElementById('bombaFim').value;
-    r += `Trator: ${tratorIni || '--:--'} às ${tratorFim || '--:--'}\n`;
+    r += `Trator: ${tratorIni || '--:--'} às ${tratorFim || '--:--'}${tratorMotivo.length ? ' | Motivo: ' + tratorMotivo.join(', ') : ''}\n`;
     r += `Bomba d'água: ${bombaIni || '--:--'} às ${bombaFim || '--:--'}\n`;
     r += `\nEquipe do dia:\n`;
     const equipe = [];
@@ -2398,7 +2438,7 @@
     const obsGerais = document.getElementById('obsGerais').value;
     if(obsGerais) r += `\nObservações gerais: ${obsGerais}\n`;
     dados.fechamento = {
-      trator: { inicio: tratorIni, fim: tratorFim },
+      trator: { inicio: tratorIni, fim: tratorFim, motivoUso: tratorMotivo },
       bomba: { inicio: bombaIni, fim: bombaFim },
       equipe,
       observacoesGerais: obsGerais
