@@ -49,6 +49,10 @@ function getOrCreateSheet(fazenda) {
   }
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
+    // ResumoTexto (F) e DadosJSON (G): corta o texto em vez de expandir a
+    // altura da linha. Clicar na célula mostra o texto completo na barra de
+    // fórmulas.
+    sheet.getRange('F:G').setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
   }
   return sheet;
 }
