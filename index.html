@@ -129,10 +129,13 @@
     box-sizing:border-box;
     max-width:100%;
   }
-  input[type="date"]{
+  input[type="date"], input[type="time"]{
     padding-right:8px;
     -webkit-appearance:none;
     appearance:none;
+  }
+  .half-field input{
+    min-width:0;
   }
   input:focus, select:focus, textarea:focus{
     border-color:var(--light-green);
