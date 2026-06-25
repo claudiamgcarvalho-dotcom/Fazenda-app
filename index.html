@@ -48,6 +48,18 @@
     top:0;
     z-index:10;
   }
+  .link-relatorios{
+    position:absolute;
+    top:14px;
+    right:16px;
+    color:#D0D8DF;
+    font-size:12px;
+    font-weight:700;
+    text-decoration:none;
+    background:rgba(255,255,255,.12);
+    padding:5px 10px;
+    border-radius:14px;
+  }
   .app-title{
     color:#fff;
     font-size:18px;
@@ -554,6 +566,7 @@
 <div class="app">
 
   <header class="app-header">
+    <a class="link-relatorios" href="relatorios.html">📊 Relatórios</a>
     <div class="app-title">🌱 Resumo Diário da Fazenda</div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     <div class="progress-label" id="progressLabel">Seção 1 de 9</div>
@@ -941,8 +954,16 @@
   // (Extensões > Apps Script > Implantar > Nova implantação > App da Web).
   const API_URL_RELATORIOS = 'https://script.google.com/macros/s/AKfycbwnvVXB0iZ-nV0z9Rm2hx1ArBd8vjWnoiRpUOCw5q0F6rJ580lEPGk7mJIe0ffX_tSs/exec';
 
+  window.addEventListener('beforeunload', (e) => {
+    if(window._envioPendente){
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
   // ===================== INIT =====================
   document.addEventListener('DOMContentLoaded', () => {
+    tentarReenviarPendentes();
     setDataAtual();
     setupFazendaButtons();
     setupBoiVirtual();
@@ -2455,6 +2476,7 @@
     document.getElementById('reportText').textContent = r;
     window._reportText = r;
     dados.resumoTexto = r;
+    dados._id = dados._id || (Date.now() + '_' + Math.random().toString(36).slice(2));
     window._reportData = dados;
   }
 
@@ -2472,16 +2494,51 @@
   }
 
   // ===================== ENVIO PARA O BANCO DE DADOS =====================
-  function enviarParaBancoDeDados(){
-    const dados = window._reportData;
-    const statusEl = document.getElementById('syncStatus');
+  const PENDENTE_PREFIXO = 'fazendaapp_pendente_';
+
+  function atualizarFlagPendente(){
+    try {
+      window._envioPendente = Object.keys(localStorage).some(k => k.startsWith(PENDENTE_PREFIXO));
+    } catch(e){
+      window._envioPendente = false;
+    }
+  }
+
+  function salvarPendenteLocal(dados){
+    try { localStorage.setItem(PENDENTE_PREFIXO + dados._id, JSON.stringify(dados)); } catch(e){}
+    atualizarFlagPendente();
+  }
+
+  function removerPendenteLocal(id){
+    try { localStorage.removeItem(PENDENTE_PREFIXO + id); } catch(e){}
+    atualizarFlagPendente();
+  }
+
+  function tentarReenviarPendentes(){
+    atualizarFlagPendente();
+    try {
+      Object.keys(localStorage).filter(k => k.startsWith(PENDENTE_PREFIXO)).forEach(k => {
+        try {
+          const dados = JSON.parse(localStorage.getItem(k));
+          enviarParaBancoDeDados(dados, null);
+        } catch(e){}
+      });
+    } catch(e){}
+  }
+
+  function enviarParaBancoDeDados(dadosParam, statusElParam){
+    const dados = dadosParam || window._reportData;
+    const statusEl = statusElParam === null ? null : (statusElParam || document.getElementById('syncStatus'));
     if(!dados){
-      statusEl.style.display = 'none';
+      if(statusEl) statusEl.style.display = 'none';
       return;
     }
-    statusEl.className = 'sync-status sync-sending';
-    statusEl.style.display = 'flex';
-    statusEl.innerHTML = '⏳ Salvando no banco de dados...';
+    salvarPendenteLocal(dados);
+    if(statusEl){
+      statusEl.className = 'sync-status sync-sending';
+      statusEl.style.display = 'flex';
+      statusEl.innerHTML = '⏳ Salvando no banco de dados...';
+    }
 
     fetch(API_URL_RELATORIOS, {
       method: 'POST',
@@ -2491,13 +2548,18 @@
       .then(res => res.json())
       .then(json => {
         if(!json || json.ok !== true) throw new Error('Resposta inesperada da API');
-        statusEl.className = 'sync-status sync-ok';
-        statusEl.innerHTML = '✅ Dados salvos no banco de dados';
+        removerPendenteLocal(dados._id);
+        if(statusEl){
+          statusEl.className = 'sync-status sync-ok';
+          statusEl.innerHTML = '✅ Dados salvos no banco de dados';
+        }
       })
       .catch(() => {
-        statusEl.className = 'sync-status sync-error';
-        statusEl.innerHTML = '⚠️ Não foi possível salvar. Verifique a internet.' +
-          '<button type="button" class="btn-retry" onclick="enviarParaBancoDeDados()">🔄 Tentar de novo</button>';
+        if(statusEl){
+          statusEl.className = 'sync-status sync-error';
+          statusEl.innerHTML = '⚠️ Sem internet agora. O relatório está guardado neste celular e será enviado automaticamente quando a conexão voltar.' +
+            '<button type="button" class="btn-retry" onclick="enviarParaBancoDeDados()">🔄 Tentar agora</button>';
+        }
       });
   }
 </script>
