@@ -2,25 +2,28 @@
 // Cole este código em Extensões > Apps Script da planilha de cadastros e
 // implante como "App da Web" (acesso: Qualquer pessoa com o link).
 
-var FARM_CODES = ['CB', 'PB', 'SH'];
-
 function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var fazendas = lerFazendas(ss);
+  // Códigos de fazenda vêm da própria aba "Fazendas" (em vez de uma lista
+  // fixa no código) — uma fazenda nova cadastrada lá já aparece aqui sem
+  // precisar editar este script.
+  var farmCodes = Object.keys(fazendas);
 
   var result = {
-    fazendas: lerFazendas(ss),
-    funcionarios: lerPorFazenda(ss, 'Funcionarios'),
-    pastos: lerPorFazenda(ss, 'Pastos'),
-    produtosNutricao: lerCatalogo(ss, 'ProdutosNutricao', function (r) {
+    fazendas: fazendas,
+    funcionarios: lerPorFazenda(ss, 'Funcionarios', farmCodes),
+    pastos: lerPorFazenda(ss, 'Pastos', farmCodes),
+    produtosNutricao: lerCatalogo(ss, 'ProdutosNutricao', farmCodes, function (r) {
       return { nome: r.Nome, unidade: r.Unidade };
     }),
-    categoriasAnimal: lerCatalogo(ss, 'CategoriasAnimal', function (r) {
+    categoriasAnimal: lerCatalogo(ss, 'CategoriasAnimal', farmCodes, function (r) {
       return r.Nome;
     }),
-    vacinas: lerCatalogo(ss, 'Vacinas', function (r) {
+    vacinas: lerCatalogo(ss, 'Vacinas', farmCodes, function (r) {
       return r.Nome;
     }),
-    tiposProduto: lerCatalogo(ss, 'TiposProduto', function (r) {
+    tiposProduto: lerCatalogo(ss, 'TiposProduto', farmCodes, function (r) {
       return { nome: r.Nome, descExemplo: r.DescricaoExemplo, qtdExemplo: r.QuantidadeExemplo };
     })
   };
@@ -65,10 +68,10 @@ function lerFazendas(ss) {
 
 // Abas "por fazenda" (Funcionarios, Pastos): Fazenda, Nome, Ativo
 // -> { CB: ["Nome", ...], PB: [...], SH: [...] }
-function lerPorFazenda(ss, nomeAba) {
+function lerPorFazenda(ss, nomeAba, farmCodes) {
   var linhas = lerLinhas(ss, nomeAba);
   var out = {};
-  FARM_CODES.forEach(function (c) { out[c] = []; });
+  farmCodes.forEach(function (c) { out[c] = []; });
   linhas.forEach(function (r) {
     if (!isAtivo(r.Ativo)) return;
     if (out[r.Fazenda]) out[r.Fazenda].push(r.Nome);
@@ -79,10 +82,10 @@ function lerPorFazenda(ss, nomeAba) {
 // Abas "catálogo compartilhado" (ProdutosNutricao, CategoriasAnimal,
 // Vacinas, TiposProduto): cada linha tem FazendasAtivas = "CB,PB,SH" e é
 // distribuída para os buckets dos códigos listados.
-function lerCatalogo(ss, nomeAba, mapLinha) {
+function lerCatalogo(ss, nomeAba, farmCodes, mapLinha) {
   var linhas = lerLinhas(ss, nomeAba);
   var out = {};
-  FARM_CODES.forEach(function (c) { out[c] = []; });
+  farmCodes.forEach(function (c) { out[c] = []; });
   linhas.forEach(function (r) {
     var ativas = String(r.FazendasAtivas || '').split(',')
       .map(function (s) { return s.trim(); })

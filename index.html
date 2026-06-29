@@ -926,22 +926,36 @@
 
 <script>
   // ===================== DADOS DAS FAZENDAS =====================
-  const EQUIPE = {
+  // EQUIPE, PASTOS, CATEGORIAS_ANIMAL, VACINA_PRODUTOS e MIX_CAMPOS (mais
+  // abaixo) começam com estes valores fixos como reserva, e são substituídos
+  // pelos dados da planilha "Fazenda App - Cadastros" em carregarCadastros()
+  // assim que o formulário abre. Se não houver internet ou a planilha estiver
+  // fora do ar, o formulário continua funcionando com esta reserva (que fica
+  // desatualizada até a próxima vez que abrir com internet).
+  let EQUIPE = {
     CB: ['REINALDO','TONINHO','JOÃO PAULO','ALAN'],
     PB: ['ROGÉRIO','GERALDO','GILBERTO','CÉLIO'],
     SH: ['DANIEL','REINALDO','AILTON','CÉLIO']
   };
 
-  const PASTOS = {
+  let PASTOS = {
     CB: ['AMOJADOR','MANGA 01 A','MANGA 01 B','MANGA 01 C','MANGA 01 D','MANGA 03 A','MANGA 03 B','MANGA 05 B','MANGA 05 BARRA','MANGA 05 C','MANGA 05 PLATÔ 1','MANGA 05 PLATÔ 2','MANGA 06 A','MANGA 06 B','MANGA 06 C','MANGA 07 A','MANGA 07 B','MANGA 07 BARRA CIPÓ','MANGA 08 – BAIXA','MANGA 08 – GENIPAPO','MANGA 08 - MORRO 1','MANGA 08 - MORRO 2','MANGA 08 - MORRO 3','MANGA 08 – PLATÔ','MANGA 09 BARRA 1','MANGA 09 BARRA 2','MANGA 09 PLATÔ 1','MANGA 09 PLATÔ 2','MANGA 09 PLATÔ 3','MANGA 10 A','MANGA 10 B','MANGA 11','MANGA 12','MANGA A','MANGA B','MANGA C','MANGA D','P. BAIA 01','P. BAIA 02','P. BAIA 03','P. BOMBA 01','P. BOMBA 02','P. BOMBA 03','P. BOMBA 04','P. CURRAL 01','P. CURRAL 02','P. CURRAL 03','P. CURRAL 04','P. REINALDO 01','P. REINALDO 02','P. REINALDO 03','ROTACIONADO 01','ROTACIONADO 02','ROTACIONADO 03','ROTACIONADO 04'],
     PB: ['FUNDAÇA 01','FUNDAÇA 02','LAGE 1','ENCRUZILHADA','PEDRA 01','PEDRA 02','SERRA 01','SERRA 02','SERRA CIMA','JE GAMELEIRA','JAMBO 01','JAMBO 02','JAMBO CIMA','MANGA 04','RONALDO','ESTRADA','CANTÃO','MANGA A','MANGA B','MANGA C 01','MANGA C 02','MANGA C 03','MANGA 3 CASA','MANGA 3 CIMA','MANGA 01 PORTEIRA','MANGA 01 CIMA','MANGA 01 SALEIRO','MANGA 02','FRENTE','PIQUETES','MANGAS','JE PONTE','JE ESTRADA','JE MINA','JE GRAVATA','JE SEDE 01','JE SEDE 02','JE LUCINHO','JE RUA','JE ZE MARIA','ANTENA','BAMBU','COQUEIRO','JOVIANO','MANGA D','LAGE 2','MATA PB FUNDAÇA 01','MATA FRENTE','MATA CANTÃO','MATA CANTÃO 02'],
     SH: ['FRENTE PLATÔ','FRENTE BURACO','FRENTE BAIXADA','FRENTE TOMBADA','PIQUETE GAMELEIRA','COLONIÃO 01','COLONIÃO 02','COLONIÃO 03','COLONIÃO 04','JOÃO BRAGA MORRO','JOÃO BRAGA BAIXADA','CURRAL 01','CURRAL 02','CURRAL FRENTE','MG5 01','MG5 02','MG5 03','MG5 04','AMOJADOR','LINDOMAR','FUNDÃO CIMA','FUNDÃO CIMA 02','FUNDÃO MEIO 01','FUNDÃO MEIO 02','FUNDÃO CANTO','CACHOEIRA MORRO','CACHOEIRA CIMA','CACHOEIRA BAIXA','B1 01','B1 02','B1 03','B1 04','B2 01','B2 02','B2 03','B2 04','TUIA 01','TUIA 02','TUIA 03','SORGO 01','SORGO 02','SORGO 03','SORGO 04','BURACÃO','FUNDO CASA REINALDO','PASTO SALEIRA','CAIXA DÁGUA','MATA SH 04','MATA SH07','REDONDEL MG5','PLANTIO NOVO','30 HECTARES']
   };
 
 
-  const CATEGORIAS_ANIMAL = ['Bezerros 0–7m','Bezerros 8–12m','Novilhas 13–24m','Garrotes 13–24m','Vacas','Bois'];
+  let CATEGORIAS_ANIMAL = {
+    CB: ['Bezerros 0–7m','Bezerros 8–12m','Novilhas 13–24m','Garrotes 13–24m','Vacas','Bois'],
+    PB: ['Bezerros 0–7m','Bezerros 8–12m','Novilhas 13–24m','Garrotes 13–24m','Vacas','Bois'],
+    SH: ['Bezerros 0–7m','Bezerros 8–12m','Novilhas 13–24m','Garrotes 13–24m','Vacas','Bois']
+  };
 
-  const VACINA_PRODUTOS = ['Raiva','Mal de Ano','Brucelose','Aftosa','Reprodutiva','Pneumonia'];
+  let VACINA_PRODUTOS = {
+    CB: ['Raiva','Mal de Ano','Brucelose','Aftosa','Reprodutiva','Pneumonia'],
+    PB: ['Raiva','Mal de Ano','Brucelose','Aftosa','Reprodutiva','Pneumonia'],
+    SH: ['Raiva','Mal de Ano','Brucelose','Aftosa','Reprodutiva','Pneumonia']
+  };
 
   // ===================== CONFIG GERAL =====================
   const totalSections = 10;
@@ -954,6 +968,45 @@
   // (Extensões > Apps Script > Implantar > Nova implantação > App da Web).
   const API_URL_RELATORIOS = 'https://script.google.com/macros/s/AKfycbwnvVXB0iZ-nV0z9Rm2hx1ArBd8vjWnoiRpUOCw5q0F6rJ580lEPGk7mJIe0ffX_tSs/exec';
 
+  // URL do Web App do Apps Script da planilha "Fazenda App - Cadastros"
+  // (doGet de cadastro/Code.gs). Busca funcionários, pastos, categorias de
+  // animal, vacinas, tipos de produto e produtos de nutrição.
+  const API_URL_CADASTROS = 'https://script.google.com/macros/s/AKfycbzdlnx_fZU-R93nLY8N10WjD5wMbqhbv4zyRnTxCgUUDNxQSss1kaqtIiAUU5sx6X-KYA/exec';
+
+  // Substitui os valores fixos (EQUIPE, PASTOS, CATEGORIAS_ANIMAL,
+  // VACINA_PRODUTOS, TIPOS_PRODUTO, MIX_CAMPOS) pelos dados da planilha de
+  // Cadastros. Se falhar (sem internet, planilha fora do ar), o formulário
+  // segue com os valores fixos como reserva — falha silenciosa de propósito,
+  // pra não travar o preenchimento do relatório do dia.
+  function carregarCadastros(){
+    const temDados = obj => obj && Object.keys(obj).length > 0;
+    fetch(API_URL_CADASTROS)
+      .then(res => res.json())
+      .then(dados => {
+        if(temDados(dados.funcionarios)) EQUIPE = dados.funcionarios;
+        if(temDados(dados.pastos)) PASTOS = dados.pastos;
+        if(temDados(dados.categoriasAnimal)) CATEGORIAS_ANIMAL = dados.categoriasAnimal;
+        if(temDados(dados.vacinas)) VACINA_PRODUTOS = dados.vacinas;
+        if(temDados(dados.tiposProduto)){
+          const tipos = {};
+          Object.keys(dados.tiposProduto).forEach(fz => {
+            tipos[fz] = dados.tiposProduto[fz].map(t => ({ nome: t.nome, desc: t.descExemplo, qtd: t.qtdExemplo }));
+          });
+          TIPOS_PRODUTO = tipos;
+        }
+        if(temDados(dados.produtosNutricao)){
+          const mix = {};
+          Object.keys(dados.produtosNutricao).forEach(fz => {
+            mix[fz] = dados.produtosNutricao[fz].map(p => mixCampoFromNome(p.nome, p.unidade));
+          });
+          MIX_CAMPOS = mix;
+        }
+      })
+      .catch(() => {
+        // Sem internet ou planilha fora do ar: mantém os valores fixos de reserva.
+      });
+  }
+
   window.addEventListener('beforeunload', (e) => {
     if(window._envioPendente){
       e.preventDefault();
@@ -963,6 +1016,7 @@
 
   // ===================== INIT =====================
   document.addEventListener('DOMContentLoaded', () => {
+    carregarCadastros();
     tentarReenviarPendentes();
     setDataAtual();
     setupFazendaButtons();
@@ -993,8 +1047,13 @@
   });
 
   function populateCurralCategorias(){
+    const selecionadas = Array.from(document.getElementById('curralCategorias').selectedOptions).map(o => o.value);
     document.getElementById('curralCategorias').innerHTML =
-      CATEGORIAS_ANIMAL.map(c => `<option value="${c}">${c}</option>`).join('');
+      (CATEGORIAS_ANIMAL[currentFazenda] || []).map(c => `<option value="${c}">${c}</option>`).join('');
+    selecionadas.forEach(v => {
+      const o = document.querySelector(`#curralCategorias option[value="${v}"]`);
+      if(o) o.selected = true;
+    });
   }
 
   function setDataAtual(){
@@ -1009,6 +1068,15 @@
     if(!iso) return '-';
     const [y,m,d] = iso.split('-');
     return `${d}/${m}/${y}`;
+  }
+
+  // Gera um nome de classe CSS estável a partir de um nome de cadastro (ex.:
+  // "Sal Mineral 160" -> "mix-salmineral160"), usado para os campos cujo
+  // conjunto vem da planilha de Cadastros (Produtos de Nutrição).
+  function slugCls(prefixo, nome){
+    return prefixo + '-' + String(nome).toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '');
   }
 
   // ===================== NAVEGAÇÃO =====================
@@ -1223,7 +1291,7 @@
           return false;
         }
         for(const card of mixCards){
-          const campos = MIX_CAMPOS.map(c => ({el: card.querySelector('.' + c.cls), label: c.label}));
+          const campos = (MIX_CAMPOS[currentFazenda] || []).map(c => ({el: card.querySelector('.' + c.cls), label: c.label}));
           const algumPreenchido = campos.some(c => c.el.value.trim() !== '');
           if(!algumPreenchido){
             const titulo = card.querySelector('.item-title').textContent;
@@ -1366,11 +1434,12 @@
 
         const select = document.getElementById('responsavel');
         select.innerHTML = '<option value="">Selecione...</option>' +
-          EQUIPE[currentFazenda].map(r => `<option value="${r}">${r}</option>`).join('');
+          (EQUIPE[currentFazenda] || []).map(r => `<option value="${r}">${r}</option>`).join('');
         select.disabled = false;
 
         renderEquipe();
         renderPastoChecklist2();
+        populateCurralCategorias();
         document.querySelectorAll('.manut-local').forEach(s => {
           const prev = Array.from(s.selectedOptions).map(o => o.value);
           s.innerHTML = (PASTOS[currentFazenda] || []).map(p => `<option value="${p}">${p}</option>`).join('');
@@ -1513,7 +1582,7 @@
     }
     return `<select class="vac-produto">
       <option value="">— selecione —</option>
-      ${VACINA_PRODUTOS.map(p => `<option value="${p}">${p}</option>`).join('')}
+      ${(VACINA_PRODUTOS[currentFazenda] || []).map(p => `<option value="${p}">${p}</option>`).join('')}
     </select>`;
   }
 
@@ -1546,7 +1615,7 @@
           <label>Categoria Animal</label>
           <select class="vac-categoria">
             <option value="">— selecione —</option>
-            ${CATEGORIAS_ANIMAL.map(c => `<option value="${c}">${c}</option>`).join('')}
+            ${(CATEGORIAS_ANIMAL[currentFazenda] || []).map(c => `<option value="${c}">${c}</option>`).join('')}
           </select>
         </div>
         <div class="field" style="margin-bottom:0;">
@@ -1643,14 +1712,11 @@
 
   // ===================== SEÇÃO 6: NUTRIÇÃO E MISTURAS =====================
   let misturaCount = 0;
-  const MIX_CAMPOS = [
-    {cls: 'mix-salbranco', label: 'Sal Branco (kg)'},
-    {cls: 'mix-mineral', label: 'Sal Mineral 160 (kg)'},
-    {cls: 'mix-fuba', label: 'Fubá (kg)'},
-    {cls: 'mix-ureia', label: 'Ureia (kg)'},
-    {cls: 'mix-soja', label: 'Soja (kg)'},
-    {cls: 'mix-promil', label: 'Promil (kg)'}
-  ];
+  function mixCampoFromNome(nome, unidade){
+    return { cls: slugCls('mix', nome), nome, unidade: unidade || 'kg', label: `${nome} (${unidade || 'kg'})` };
+  }
+  const MIX_FALLBACK_LISTA = ['Sal Branco','Sal Mineral 160','Fubá','Ureia','Soja','Promil'].map(n => mixCampoFromNome(n));
+  let MIX_CAMPOS = { CB: MIX_FALLBACK_LISTA, PB: MIX_FALLBACK_LISTA, SH: MIX_FALLBACK_LISTA };
 
   function mixFieldHTML(campo, last){
     return `
@@ -1680,7 +1746,7 @@
       </div>
       <div class="trat-fields">
         <div class="item-title">🌾 Mistura <span class="mix-num"></span></div>
-        ${MIX_CAMPOS.map(c => mixFieldHTML(c, false)).join('')}
+        ${(MIX_CAMPOS[currentFazenda] || []).map(c => mixFieldHTML(c, false)).join('')}
         <button type="button" class="add-btn mix-concluir-btn" style="margin-top:14px;" disabled>✅ Concluir Mistura</button>
       </div>
     `;
@@ -1690,7 +1756,7 @@
     const concluirBtn = div.querySelector('.mix-concluir-btn');
 
     const checarCompleto = () => {
-      const completo = MIX_CAMPOS.some(c => div.querySelector('.' + c.cls).value.trim() !== '');
+      const completo = (MIX_CAMPOS[currentFazenda] || []).some(c => div.querySelector('.' + c.cls).value.trim() !== '');
       concluirBtn.disabled = !completo;
     };
 
@@ -1966,15 +2032,19 @@
   }
 
   // ===================== SEÇÃO 8: SOLICITAÇÃO DE PRODUTOS =====================
-  const PROD_HINTS = {
-    'Produto veterinário':       {desc: 'Ex: Ivermectina, Antibiótico, Vermífugo',     qtd: 'Ex: 5 frascos, 2 caixas'},
-    'Produto de nutrição':       {desc: 'Ex: Sal mineral, Ureia, Fubá, Soja',          qtd: 'Ex: 10 sacos de 30 kg'},
-    'Material de infraestrutura':{desc: 'Ex: Arame, Mourão, Cimento, Pregos',          qtd: 'Ex: 5 rolos, 20 unidades'},
-    'Serviço externo':           {desc: 'Ex: Conserto de..., Veterinário, Mecânico',   qtd: 'Ex: 1 visita'},
-    'Equipamento / máquina':     {desc: 'Ex: Bomba, Roçadeira, Peça de reposição',      qtd: 'Ex: 1 unidade'},
-    'Combustível / Óleo':        {desc: 'Ex: Diesel S10, Óleo hidráulico, Graxa',       qtd: 'Ex: 200 litros, 5 galões'},
-    'Outro':                     {desc: 'Ex: Descreva o produto ou serviço',            qtd: 'Ex: Informe a quantidade'}
-  };
+  const TIPOS_PRODUTO_FALLBACK = [
+    {nome: 'Produto veterinário',        desc: 'Ex: Ivermectina, Antibiótico, Vermífugo',     qtd: 'Ex: 5 frascos, 2 caixas'},
+    {nome: 'Produto de nutrição',        desc: 'Ex: Sal mineral, Ureia, Fubá, Soja',          qtd: 'Ex: 10 sacos de 30 kg'},
+    {nome: 'Material de infraestrutura', desc: 'Ex: Arame, Mourão, Cimento, Pregos',          qtd: 'Ex: 5 rolos, 20 unidades'},
+    {nome: 'Serviço externo',            desc: 'Ex: Conserto de..., Veterinário, Mecânico',   qtd: 'Ex: 1 visita'},
+    {nome: 'Equipamento / máquina',      desc: 'Ex: Bomba, Roçadeira, Peça de reposição',      qtd: 'Ex: 1 unidade'},
+    {nome: 'Combustível / Óleo',         desc: 'Ex: Diesel S10, Óleo hidráulico, Graxa',       qtd: 'Ex: 200 litros, 5 galões'},
+    {nome: 'Outro',                      desc: 'Ex: Descreva o produto ou serviço',            qtd: 'Ex: Informe a quantidade'}
+  ];
+  let TIPOS_PRODUTO = { CB: TIPOS_PRODUTO_FALLBACK, PB: TIPOS_PRODUTO_FALLBACK, SH: TIPOS_PRODUTO_FALLBACK };
+  function hintProduto(nome){
+    return (TIPOS_PRODUTO[currentFazenda] || []).find(t => t.nome === nome) || {};
+  }
 
   let produtoCount = 0;
   function addProduto(){
@@ -1996,13 +2066,7 @@
           <label>Tipo</label>
           <select class="prod-tipo">
             <option value="">Selecione...</option>
-            <option>Produto veterinário</option>
-            <option>Produto de nutrição</option>
-            <option>Material de infraestrutura</option>
-            <option>Serviço externo</option>
-            <option>Equipamento / máquina</option>
-            <option>Combustível / Óleo</option>
-            <option>Outro</option>
+            ${(TIPOS_PRODUTO[currentFazenda] || []).map(t => `<option>${t.nome}</option>`).join('')}
           </select>
         </div>
         <div class="field">
@@ -2037,7 +2101,7 @@
     };
 
     div.querySelector('.prod-tipo').addEventListener('change', () => {
-      const hints = PROD_HINTS[div.querySelector('.prod-tipo').value] || {};
+      const hints = hintProduto(div.querySelector('.prod-tipo').value);
       div.querySelector('.prod-desc').placeholder = hints.desc || 'Ex: Sal mineral, arame liso';
       div.querySelector('.prod-qtd').placeholder  = hints.qtd  || 'Ex: 10 sacos, 50 kg';
       checarConclusao();
@@ -2339,14 +2403,10 @@
     const misturas = [];
     if(mixSim){
       document.querySelectorAll('#misturasList .item-card').forEach((card, i) => {
-        const campos = [
-          {label: 'Sal Branco',     val: card.querySelector('.mix-salbranco').value},
-          {label: 'Sal Mineral 160',val: card.querySelector('.mix-mineral').value},
-          {label: 'Fubá',           val: card.querySelector('.mix-fuba').value},
-          {label: 'Ureia',          val: card.querySelector('.mix-ureia').value},
-          {label: 'Soja',           val: card.querySelector('.mix-soja').value},
-          {label: 'Promil',         val: card.querySelector('.mix-promil').value},
-        ];
+        const campos = (MIX_CAMPOS[currentFazenda] || []).map(c => ({
+          label: c.nome,
+          val: card.querySelector('.' + c.cls).value
+        }));
         const itens = campos.filter(c => Number(c.val) > 0).map(c => `${c.label} ${c.val}kg`);
         r += `- Mistura ${i+1}: ${itens.length ? itens.join(' | ') : 'Nenhum ingrediente informado'}\n`;
         const ingredientes = {};
