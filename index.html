@@ -2417,7 +2417,8 @@
           let urgTexto = urg ? urg.textContent.trim() : '-';
           if(urg && urg.dataset.level === 'outro8' && urgOutro) urgTexto += ` (${urgOutro})`;
           r += `- ${desc || '-'} | Qtd: ${qtd || '-'} | Urgência: ${urgTexto}\n`;
-          solicitacoes.push({ tipo, descricao: desc, quantidade: qtd, urgencia: urgTexto });
+          const idSolicitacao = `sol-${dataRegistro.replace(/-/g,'')}-${currentFazenda}-${solicitacoes.length + 1}`;
+          solicitacoes.push({ id: idSolicitacao, tipo, descricao: desc, quantidade: qtd, urgencia: urgTexto });
         }
       });
       if(!temProduto) r += `Nenhum produto preenchido.\n`;

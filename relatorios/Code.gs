@@ -13,6 +13,22 @@
 var FALLBACK_SHEET_NAME = 'RelatoriosDiarios';
 var HEADERS = ['Timestamp', 'ID', 'Data', 'Fazenda', 'Responsavel', 'ResumoTexto', 'DadosJSON'];
 
+// Planilha separada "Solicitações" (uma aba por fazenda), usada pra guardar o
+// link do cartão do Trello de cada solicitação depois que a administração cria
+// o cartão. Cole aqui o ID da planilha (está na URL dela) depois de criá-la —
+// até lá, fica desativado sem quebrar o envio do relatório diário.
+var SOLICITACOES_SPREADSHEET_ID = '1cYVvpPC9Xfi8E8yen2UVzjPyctlIYKKqqjAjOCuV81M';
+var SOLICITACOES_HEADERS = ['Timestamp', 'ID', 'Data', 'Fazenda', 'Descricao', 'Quantidade', 'Urgencia', 'LinkTrello'];
+
+// Planilha separada "Controle de Horas" (uma aba por fazenda, mais uma aba
+// "<FAZENDA>_ResumoMensal" com o total por mês e funcionário). Cole aqui o ID
+// dela depois de criada — até lá, fica desativado sem quebrar o envio do
+// relatório diário (mesmo padrão de proteção da SOLICITACOES_SPREADSHEET_ID).
+var CONTROLE_HORAS_SPREADSHEET_ID = '12YGHFdE8hPEyr4HQmE23n1l2jN-uxOjirBCuLUu1TZU';
+var HORAS_HEADERS = ['Data', 'Fazenda', 'Funcionario', 'DiaSemana', 'Presenca', 'Horas', 'Dias', 'ObservacoesGerais'];
+var RESUMO_MENSAL_HEADERS = ['Ano', 'Mes', 'Funcionario', 'TotalHoras', 'TotalDias'];
+var DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
 function doPost(e) {
   var raw = (e && e.postData && e.postData.contents) || '';
   var dados = {};
@@ -36,7 +52,261 @@ function doPost(e) {
     raw
   ]);
 
+  registrarSolicitacoes(dados, fazenda);
+  registrarHoras(dados, fazenda);
+
   return ContentService.createTextOutput(JSON.stringify({ ok: true, id: id }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Copia cada solicitação de produto do envio do dia pra planilha "Solicitações"
+// (uma linha por item, na aba da fazenda), pra administração acompanhar e
+// colar o link do Trello depois. Envolto em try/catch: se a planilha ainda não
+// foi criada/configurada (SOLICITACOES_SPREADSHEET_ID com o valor placeholder),
+// o relatório diário continua sendo salvo normalmente, só sem essa cópia.
+function registrarSolicitacoes(dados, fazenda) {
+  var itens = (dados.solicitacoesProdutos || {}).itens || [];
+  if (!itens.length) return;
+  try {
+    var ss = SpreadsheetApp.openById(SOLICITACOES_SPREADSHEET_ID);
+    var aba = getOrCreateAbaSolicitacoes(ss, fazenda);
+    itens.forEach(function (item) {
+      aba.appendRow([
+        new Date(),
+        item.id || '',
+        dados.data || '',
+        fazenda,
+        item.descricao || '',
+        item.quantidade || '',
+        item.urgencia || '',
+        ''
+      ]);
+    });
+  } catch (err) {
+    // Planilha de Solicitações ainda não configurada — ignora silenciosamente.
+  }
+}
+
+function getOrCreateAbaSolicitacoes(ss, fazenda) {
+  var nomeAba = fazenda || FALLBACK_SHEET_NAME;
+  var aba = ss.getSheetByName(nomeAba);
+  if (!aba) aba = ss.insertSheet(nomeAba);
+  if (aba.getLastRow() === 0) aba.appendRow(SOLICITACOES_HEADERS);
+  return aba;
+}
+
+// Devolve o nome do dia da semana (em português) de uma data "yyyy-MM-dd",
+// construindo a data a partir dos números diretamente (evita ambiguidade de
+// fuso horário que o new Date(string) padrão do JS poderia causar).
+function diaDaSemana(dataISO) {
+  var p = String(dataISO).split('-');
+  var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  return DIAS_SEMANA[d.getDay()];
+}
+
+// Regra de horas/dias trabalhados (definida com a usuária):
+// Integral: 8h/1 dia de segunda a domingo, exceto sábado (4h/1 dia).
+// Meio período: 4h/0,5 dia de segunda a domingo, exceto sábado (4h/1 dia).
+// Falta e Folga combinada: sempre 0h/0 dia.
+function calcularHorasDias(presenca, dataISO) {
+  var sabado = diaDaSemana(dataISO) === 'Sábado';
+  if (presenca === 'Integral') return { horas: sabado ? 4 : 8, dias: 1 };
+  if (presenca === 'Meio período') return { horas: 4, dias: sabado ? 1 : 0.5 };
+  return { horas: 0, dias: 0 };
+}
+
+// Copia a equipe do dia pra planilha "Controle de Horas" (uma linha por
+// funcionário) e atualiza o resumo mensal. Se já houver mais de um envio no
+// mesmo dia/fazenda (já visto acontecer na prática), as linhas desse dia são
+// substituídas a cada novo envio — só o último envio do dia vale, igual o
+// painel diário já prioriza. Envolto em try/catch: enquanto a planilha não
+// estiver configurada, o relatório diário continua sendo salvo normalmente.
+function registrarHoras(dados, fazenda) {
+  var equipe = (dados.fechamento || {}).equipe || [];
+  if (!equipe.length || !dados.data) return;
+  try {
+    var ss = SpreadsheetApp.openById(CONTROLE_HORAS_SPREADSHEET_ID);
+    var aba = getOrCreateAbaHoras(ss, fazenda);
+
+    removerLinhasDoDia(aba, dados.data);
+
+    var observacoesGerais = (dados.fechamento || {}).observacoesGerais || '';
+    equipe.forEach(function (p) {
+      var calc = calcularHorasDias(p.presenca, dados.data);
+      aba.appendRow([dados.data, fazenda, p.nome || '', diaDaSemana(dados.data), p.presenca || '', calc.horas, calc.dias, observacoesGerais]);
+    });
+
+    atualizarResumoMensal(ss, fazenda, dados.data);
+  } catch (err) {
+    // Planilha de Controle de Horas ainda não configurada — ignora silenciosamente.
+  }
+}
+
+function getOrCreateAbaHoras(ss, fazenda) {
+  var nomeAba = fazenda || FALLBACK_SHEET_NAME;
+  var aba = ss.getSheetByName(nomeAba);
+  if (!aba) aba = ss.insertSheet(nomeAba);
+  if (aba.getLastRow() === 0) aba.appendRow(HORAS_HEADERS);
+  return aba;
+}
+
+// Remove as linhas já existentes daquela data antes de regravar — garante que
+// múltiplos envios no mesmo dia não dupliquem horas (só o último prevalece).
+function removerLinhasDoDia(aba, dataISO) {
+  var linhas = aba.getDataRange().getValues();
+  for (var i = linhas.length - 1; i >= 1; i--) {
+    if (formatarData(linhas[i][0]) === dataISO) {
+      aba.deleteRow(i + 1);
+    }
+  }
+}
+
+// Recalcula o total de horas/dias do mês (ano+mês da data informada) de cada
+// funcionário, varrendo a aba "Controle de Horas" daquela fazenda, e regrava
+// a aba "<FAZENDA>_ResumoMensal" com os totais atualizados.
+function atualizarResumoMensal(ss, fazenda, dataISO) {
+  var p = String(dataISO).split('-');
+  var ano = Number(p[0]);
+  var mes = Number(p[1]);
+
+  var abaHoras = ss.getSheetByName(fazenda);
+  var linhas = abaHoras.getDataRange().getValues();
+  var totais = {};
+  for (var i = 1; i < linhas.length; i++) {
+    var dataLinha = formatarData(linhas[i][0]);
+    if (!dataLinha) continue;
+    var partesLinha = dataLinha.split('-');
+    if (Number(partesLinha[0]) !== ano || Number(partesLinha[1]) !== mes) continue;
+    var nome = linhas[i][2];
+    if (!totais[nome]) totais[nome] = { horas: 0, dias: 0 };
+    totais[nome].horas += Number(linhas[i][5]) || 0;
+    totais[nome].dias += Number(linhas[i][6]) || 0;
+  }
+
+  var nomeAbaResumo = fazenda + '_ResumoMensal';
+  var abaResumo = ss.getSheetByName(nomeAbaResumo);
+  if (!abaResumo) abaResumo = ss.insertSheet(nomeAbaResumo);
+  if (abaResumo.getLastRow() === 0) abaResumo.appendRow(RESUMO_MENSAL_HEADERS);
+
+  var linhasResumo = abaResumo.getDataRange().getValues();
+  for (var j = linhasResumo.length - 1; j >= 1; j--) {
+    if (Number(linhasResumo[j][0]) === ano && Number(linhasResumo[j][1]) === mes) {
+      abaResumo.deleteRow(j + 1);
+    }
+  }
+  Object.keys(totais).forEach(function (nome) {
+    abaResumo.appendRow([ano, mes, nome, totais[nome].horas, totais[nome].dias]);
+  });
+}
+
+// API de leitura para os painéis (Fase 4). Devolve os registros diários
+// (já com o DadosJSON parseado) de uma fazenda dentro de um intervalo de
+// datas. A agregação por dia/semana/mês é feita no front-end (relatorios.html)
+// para manter este script simples e fácil de evoluir sem precisar reimplantar
+// toda vez que um novo indicador for adicionado ao painel.
+// Exemplo: ?fazenda=CB&inicio=2026-06-01&fim=2026-06-30
+function doGet(e) {
+  var params = (e && e.parameter) || {};
+  var fazenda = (params.fazenda || '').trim();
+  var inicio = params.inicio || '';
+  var fim = params.fim || '';
+
+  if (!fazenda || !inicio || !fim) {
+    return jsonOutput({ ok: false, error: 'Parâmetros fazenda, inicio e fim são obrigatórios.', registros: [] });
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(fazenda);
+  if (!sheet) {
+    return jsonOutput({ ok: true, registros: [], aviso: 'Aba "' + fazenda + '" não encontrada.' });
+  }
+
+  var linhas = sheet.getDataRange().getValues();
+
+  // Modo de diagnóstico temporário: ?debug=1 devolve o que foi lido em cada
+  // linha (sem filtrar por data), pra investigar incompatibilidade de formato.
+  if (params.debug) {
+    var diagnostico = [];
+    for (var d = 1; d < linhas.length; d++) {
+      diagnostico.push({
+        linha: d + 1,
+        valorBruto: String(linhas[d][2]),
+        tipo: Object.prototype.toString.call(linhas[d][2]),
+        dataFormatada: formatarData(linhas[d][2]),
+        fazendaCelula: linhas[d][3]
+      });
+    }
+    return jsonOutput({ ok: true, diagnostico: diagnostico });
+  }
+
+  var registros = [];
+  for (var i = 1; i < linhas.length; i++) {
+    var row = linhas[i];
+    var dataRegistro = formatarData(row[2]);
+    if (!dataRegistro || dataRegistro < inicio || dataRegistro > fim) continue;
+    var dadosJson;
+    try {
+      dadosJson = JSON.parse(row[6] || '{}');
+    } catch (err) {
+      continue;
+    }
+    registros.push({ data: dataRegistro, responsavel: row[4] || '', dados: dadosJson });
+  }
+  registros.sort(function (a, b) { return a.data < b.data ? -1 : (a.data > b.data ? 1 : 0); });
+
+  enriquecerComLinksTrello(registros, fazenda);
+
+  return jsonOutput({ ok: true, registros: registros });
+}
+
+// Adiciona o campo "linkTrello" em cada solicitação (casando pelo ID) com o
+// que estiver salvo na planilha "Solicitações". Envolto em try/catch pelo
+// mesmo motivo do registrarSolicitacoes: não quebra o painel se essa planilha
+// ainda não estiver configurada.
+function enriquecerComLinksTrello(registros, fazenda) {
+  var temSolicitacao = registros.some(function (r) {
+    return ((r.dados.solicitacoesProdutos || {}).itens || []).length > 0;
+  });
+  if (!temSolicitacao) return;
+
+  try {
+    var ss = SpreadsheetApp.openById(SOLICITACOES_SPREADSHEET_ID);
+    var aba = ss.getSheetByName(fazenda);
+    if (!aba) return;
+
+    var linhas = aba.getDataRange().getValues();
+    var linkPorId = {};
+    for (var i = 1; i < linhas.length; i++) {
+      var idLinha = linhas[i][1];
+      var link = linhas[i][7];
+      if (idLinha && link) linkPorId[idLinha] = link;
+    }
+
+    registros.forEach(function (r) {
+      var itens = (r.dados.solicitacoesProdutos || {}).itens || [];
+      itens.forEach(function (item) {
+        if (item.id && linkPorId[item.id]) item.linkTrello = linkPorId[item.id];
+      });
+    });
+  } catch (err) {
+    // Planilha de Solicitações ainda não configurada — segue sem o link.
+  }
+}
+
+// A coluna "Data" pode conter texto ("2026-06-24") ou, se o Sheets converter
+// automaticamente o valor ao salvar, um objeto Date — normaliza pros dois casos.
+// Usa Object.prototype.toString em vez de "instanceof Date": o runtime do Apps
+// Script devolve os valores de data de getValues() de um contexto diferente
+// do construtor Date global, então "instanceof" falha mesmo sendo uma data.
+function formatarData(valor) {
+  if (Object.prototype.toString.call(valor) === '[object Date]') {
+    return Utilities.formatDate(valor, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return String(valor || '');
+}
+
+function jsonOutput(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 

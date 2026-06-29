@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Relatórios da Fazenda</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @font-face{font-family:'FuturaStd';src:url('FuturaStd-Light.otf') format('opentype');font-weight:300;font-style:normal;}
+  @font-face{font-family:'FuturaStd';src:url('FuturaStd-Book.otf') format('opentype');font-weight:400;font-style:normal;}
+  @font-face{font-family:'FuturaStd';src:url('FuturaStd-Medium.otf') format('opentype');font-weight:600;font-style:normal;}
+  @font-face{font-family:'FuturaStd';src:url('FuturaStd-Bold.otf') format('opentype');font-weight:700;font-style:normal;}
+
+  :root{
+    --dark-green:#688A7E;
+    --mid-green:#4A6860;
+    --light-green:#1A78C2;
+    --pale-green:#EEEEEE;
+    --accent:#B8CECA;
+    --white:#FFFFFF;
+    --text:#797979;
+    --gray:#9AA5AB;
+    --ok:#1B7A4D;
+    --ok-bg:#DCF1E6;
+    --warn:#946200;
+    --warn-bg:#FFF3CD;
+    --danger:#A32A2A;
+    --danger-bg:#FBE1E1;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:'FuturaStd','Segoe UI',Roboto,Arial,sans-serif;
+    background:var(--pale-green);
+    color:var(--text);
+    line-height:1.4;
+  }
+  .app-header{
+    background:#394A59;
+    padding:16px;
+    text-align:center;
+  }
+  .app-header .app-title{color:#fff;font-size:18px;font-weight:800;letter-spacing:0.5px;}
+
+  .topbar{
+    background:#fff;
+    padding:14px 16px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    align-items:center;
+    justify-content:center;
+    border-bottom:1px solid #e3e3e3;
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  .btn-group{display:flex;gap:6px;}
+  .pill-btn{
+    border:2px solid var(--accent);
+    background:#fff;
+    color:var(--mid-green);
+    border-radius:20px;
+    padding:7px 16px;
+    font-size:13px;
+    font-weight:700;
+    font-family:inherit;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .pill-btn.selected{background:var(--dark-green);color:#fff;border-color:var(--dark-green);}
+  input[type="date"]{
+    border:2px solid var(--accent);
+    border-radius:20px;
+    padding:6px 12px;
+    font-family:inherit;
+    font-size:13px;
+    color:var(--mid-green);
+    font-weight:700;
+  }
+  .btn-present{
+    background:#394A59;color:#fff;border:none;border-radius:20px;
+    padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
+
+  .status-msg{text-align:center;padding:40px 20px;color:var(--gray);font-size:15px;}
+  .status-msg.erro{color:var(--danger);}
+
+  #panelContainer{padding:18px;max-width:1100px;margin:0 auto;}
+  .panel-header{margin-bottom:16px;}
+  .panel-header h1{font-size:20px;color:#394A59;font-weight:800;}
+  .panel-header .sub{font-size:13px;color:var(--gray);margin-top:2px;}
+
+  .cards-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(280px,1fr));
+    gap:16px;
+  }
+  .card{
+    background:#fff;
+    border-radius:14px;
+    padding:18px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    border:1px solid #ececec;
+  }
+  .card h3{font-size:15px;color:#394A59;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .card h3 .ic{font-size:20px;}
+
+  .kpi-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .kpi{flex:1;min-width:90px;background:var(--pale-green);border-radius:10px;padding:12px 8px;text-align:center;overflow:hidden;}
+  .kpi .num{font-size:clamp(18px,5vw,26px);font-weight:800;color:var(--dark-green);line-height:1.1;word-break:break-word;}
+  .kpi .label{font-size:11px;color:var(--text);margin-top:4px;}
+
+  .badge{display:inline-block;padding:6px 11px;border-radius:20px;font-size:12.5px;font-weight:700;margin:3px 4px 3px 0;}
+  .badge-on{background:var(--ok-bg);color:var(--ok);}
+  .badge-off{background:#EEE;color:#aaa;}
+  .badge-warn{background:var(--warn-bg);color:var(--warn);}
+  .badge-danger{background:var(--danger-bg);color:var(--danger);}
+
+  .chip{display:inline-block;background:var(--pale-green);color:var(--mid-green);padding:5px 10px;border-radius:8px;font-size:12px;margin:3px 4px 3px 0;font-weight:600;}
+  .muted{color:var(--gray);font-size:12.5px;}
+  .alert-danger{background:var(--danger-bg);color:var(--danger);padding:10px 14px;border-radius:10px;font-weight:700;margin-top:10px;font-size:13.5px;}
+  .list-item{padding:7px 0;border-bottom:1px solid #f2f2f2;font-size:13.5px;}
+  .list-item:last-child{border-bottom:none;}
+  .empty-hint{font-size:13px;color:var(--gray);padding:6px 0;}
+
+  .badge-info{background:#DCEEFB;color:#1A78C2;}
+  .link-trello{display:inline-block;font-size:12px;font-weight:700;color:#1A78C2;text-decoration:none;}
+  .link-trello:hover{text-decoration:underline;}
+  .status-bar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:#eee;}
+  .status-legend-mini{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 14px;font-size:11px;color:var(--text);}
+  .status-legend-mini i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle;}
+  .servico-grupo{margin-bottom:10px;}
+  .servico-grupo-titulo{font-weight:700;color:#394A59;font-size:13.5px;margin-bottom:2px;}
+  .servico-item{padding-left:10px;}
+
+  /* Espaçamento mais compacto, só no painel Diário (Semanal/Mensal ficam como estão) */
+  .cards-grid.modo-diario .list-item{padding:4px 0;}
+  .cards-grid.modo-diario .servico-grupo{margin-bottom:6px;}
+  .cards-grid.modo-diario .servico-grupo-titulo{margin-bottom:0;margin-top:6px;}
+  .presenca-Integral{background:var(--ok-bg);color:var(--ok);}
+  .presenca-Meio{background:var(--warn-bg);color:var(--warn);}
+  .presenca-Falta{background:var(--danger-bg);color:var(--danger);}
+  .presenca-Folga{background:#EEE;color:#888;}
+
+  canvas{max-width:100%;}
+
+  /* ===================== MODO APRESENTAÇÃO ===================== */
+  body.apresentando{font-size:18px;background:#fff;}
+  body.apresentando .topbar{display:none;}
+  body.apresentando .app-header{display:none;}
+  body.apresentando #panelContainer{padding:0;max-width:none;margin:0;}
+  body.apresentando .panel-header{display:none;}
+  body.apresentando .cards-grid{display:block;}
+  body.apresentando .card{display:none;}
+  body.apresentando .card.slide-ativo{
+    display:flex;flex-direction:column;justify-content:center;
+    height:100vh;width:100vw;max-width:none;border-radius:0;border:none;
+    padding:50px 70px;box-shadow:none;
+  }
+  body.apresentando .card.slide-ativo h3{font-size:30px;margin-bottom:24px;}
+  body.apresentando .card.slide-ativo .kpi .num{font-size:clamp(24px,6vw,46px);}
+  body.apresentando .card.slide-ativo .kpi .label{font-size:14px;}
+  body.apresentando .card.slide-ativo .badge,
+  body.apresentando .card.slide-ativo .chip{font-size:15px;padding:8px 14px;}
+  body.apresentando .card.slide-ativo .list-item{font-size:16px;padding:10px 0;}
+  body.apresentando .card.slide-ativo canvas{max-height:55vh;}
+
+  .present-bar{
+    display:none;
+    position:fixed;bottom:0;left:0;right:0;
+    background:#394A59;color:#fff;
+    padding:10px 16px;
+    align-items:center;justify-content:center;gap:14px;
+    z-index:100;
+  }
+  body.apresentando .present-bar{display:flex;}
+  .present-bar button{
+    background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;
+    padding:8px 14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
+  .present-bar button:hover{background:rgba(255,255,255,.28);}
+  #slideCounter{font-size:13px;font-weight:700;color:#D0D8DF;}
+</style>
+</head>
+<body>
+
+  <header class="app-header"><div class="app-title">📊 Relatórios da Fazenda</div></header>
+
+  <div class="topbar">
+    <div class="btn-group" id="farmButtons"></div>
+    <div class="btn-group" id="periodButtons"></div>
+    <input type="date" id="dataRef">
+    <button class="btn-present" id="btnApresentar">🖥️ Modo Apresentação</button>
+  </div>
+
+  <div id="panelContainer">
+    <div class="panel-header" id="panelHeader"></div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+
+  <div class="present-bar" id="presentBar">
+    <button id="btnPrevSlide">⬅</button>
+    <span id="slideCounter"></span>
+    <button id="btnNextSlide">➡</button>
+    <button id="btnExportSlide">📷 Exportar imagem</button>
+    <button id="btnSairApresentacao">✕ Sair</button>
+  </div>
+
+<script>
+  const FARM_CODES = ['CB','PB','SH'];
+  const PERIODOS = [{id:'diario',label:'Diário'},{id:'semanal',label:'Semanal'},{id:'mensal',label:'Mensal'}];
+  const API_URL_RELATORIOS = 'https://script.google.com/macros/s/AKfycbwnvVXB0iZ-nV0z9Rm2hx1ArBd8vjWnoiRpUOCw5q0F6rJ580lEPGk7mJIe0ffX_tSs/exec';
+  const BOI_VIRTUAL_LABELS = ['Choveu','Mudei o gado de pasto','Distribuí nutrição','Nascimento','Aborto / Natimorto','Morreu animal'];
+  const BOI_VIRTUAL_ICONS = {'Choveu':'🌧️','Mudei o gado de pasto':'🐄','Distribuí nutrição':'🌾','Nascimento':'🐣','Aborto / Natimorto':'⚠️','Morreu animal':'💀'};
+
+  const state = { fazenda: 'CB', periodo: 'diario', dataRef: todayISO() };
+  let chartInstances = {};
+  let slides = [];
+  let slideIndex = 0;
+
+  // ===================== HELPERS DE DATA =====================
+  function todayISO(){
+    const d = new Date();
+    const tz = d.getTimezoneOffset() * 60000;
+    return new Date(d - tz).toISOString().slice(0,10);
+  }
+  function parseISO(str){
+    const [y,m,d] = str.split('-').map(Number);
+    return new Date(Date.UTC(y, m-1, d));
+  }
+  function fmtISO(d){ return d.toISOString().slice(0,10); }
+  function addDays(d, n){ const r = new Date(d); r.setUTCDate(r.getUTCDate() + n); return r; }
+  function fmtBR(d){ return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth()+1).padStart(2,'0'); }
+  function getSemana(d){
+    const dow = d.getUTCDay();
+    const diffToMonday = (dow === 0 ? -6 : 1 - dow);
+    const inicio = addDays(d, diffToMonday);
+    const fim = addDays(inicio, 6);
+    return { inicio, fim };
+  }
+  function getMes(d){
+    const y = d.getUTCFullYear(), m = d.getUTCMonth();
+    const inicio = new Date(Date.UTC(y, m, 1));
+    const fim = new Date(Date.UTC(y, m+1, 0));
+    return { inicio, fim };
+  }
+  function horasEntre(ini, fim){
+    if(!ini || !fim) return 0;
+    const [hi,mi] = ini.split(':').map(Number);
+    const [hf,mf] = fim.split(':').map(Number);
+    if(isNaN(hi) || isNaN(hf)) return 0;
+    let diff = (hf*60+mf) - (hi*60+mi);
+    if(diff < 0) diff += 24*60;
+    return diff/60;
+  }
+
+  // ===================== UI: TOPBAR =====================
+  function montarTopbar(){
+    const farmBox = document.getElementById('farmButtons');
+    farmBox.innerHTML = FARM_CODES.map(c =>
+      `<button type="button" class="pill-btn farm-btn" data-value="${c}">${c}</button>`).join('');
+    farmBox.querySelectorAll('.farm-btn').forEach(btn => {
+      btn.addEventListener('click', () => { state.fazenda = btn.dataset.value; atualizarSelecoes(); carregarDados(); });
+    });
+
+    const periodBox = document.getElementById('periodButtons');
+    periodBox.innerHTML = PERIODOS.map(p =>
+      `<button type="button" class="pill-btn period-btn" data-value="${p.id}">${p.label}</button>`).join('');
+    periodBox.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', () => { state.periodo = btn.dataset.value; atualizarSelecoes(); carregarDados(); });
+    });
+
+    const dataInput = document.getElementById('dataRef');
+    dataInput.value = state.dataRef;
+    dataInput.addEventListener('change', () => { state.dataRef = dataInput.value || todayISO(); carregarDados(); });
+
+    atualizarSelecoes();
+  }
+  function atualizarSelecoes(){
+    document.querySelectorAll('.farm-btn').forEach(b => b.classList.toggle('selected', b.dataset.value === state.fazenda));
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('selected', b.dataset.value === state.periodo));
+  }
+
+  // ===================== BUSCA DE DADOS =====================
+  function calcularIntervalo(){
+    const ref = parseISO(state.dataRef);
+    if(state.periodo === 'diario') return { inicio: ref, fim: ref };
+    if(state.periodo === 'semanal') return getSemana(ref);
+    return getMes(ref);
+  }
+
+  async function carregarDados(){
+    const grid = document.getElementById('cardsGrid');
+    const header = document.getElementById('panelHeader');
+    header.innerHTML = '';
+    grid.innerHTML = '<div class="status-msg">Carregando...</div>';
+
+    const { inicio, fim } = calcularIntervalo();
+    const url = `${API_URL_RELATORIOS}?fazenda=${encodeURIComponent(state.fazenda)}&inicio=${fmtISO(inicio)}&fim=${fmtISO(fim)}`;
+
+    try {
+      const resp = await fetch(url);
+      const json = await resp.json();
+      if(!json.ok){
+        grid.innerHTML = `<div class="status-msg erro">⚠️ ${json.error || 'Erro ao carregar dados.'}</div>`;
+        return;
+      }
+      renderPainel(json.registros, inicio, fim);
+    } catch (err) {
+      grid.innerHTML = '<div class="status-msg erro">⚠️ Não foi possível conectar à planilha. Verifique sua internet e tente de novo.</div>';
+    }
+  }
+
+  // ===================== RENDER GERAL =====================
+  function renderPainel(registros, inicio, fim){
+    Object.values(chartInstances).forEach(c => c.destroy());
+    chartInstances = {};
+    const grid = document.getElementById('cardsGrid');
+    grid.innerHTML = '';
+    grid.classList.toggle('modo-diario', state.periodo === 'diario');
+
+    montarCabecalho(registros, inicio, fim);
+
+    if(registros.length === 0){
+      grid.innerHTML = '<div class="status-msg">Nenhum registro encontrado para este período.</div>';
+      return;
+    }
+
+    let cards = [];
+    if(state.periodo === 'diario'){
+      const ultimo = registros[registros.length - 1];
+      cards = renderDiario(ultimo);
+      if(registros.length > 1){
+        const aviso = document.createElement('div');
+        aviso.className = 'alert-danger';
+        aviso.style.marginBottom = '16px';
+        aviso.textContent = `⚠️ Foram encontrados ${registros.length} envios para este dia (esperado: 1). Mostrando o mais recente, de ${ultimo.responsavel || ultimo.dados.responsavel || '-'}. Verifique na planilha se houve envio duplicado.`;
+        document.getElementById('panelHeader').appendChild(aviso);
+      }
+    } else {
+      cards = renderAgregado(registros, inicio, fim);
+    }
+
+    cards.forEach(c => grid.appendChild(c));
+  }
+
+  function montarCabecalho(registros, inicio, fim){
+    const header = document.getElementById('panelHeader');
+    let periodoTexto;
+    if(state.periodo === 'diario') periodoTexto = fmtBR(inicio) + '/' + inicio.getUTCFullYear();
+    else if(state.periodo === 'semanal') periodoTexto = `Semana de ${fmtBR(inicio)} a ${fmtBR(fim)}`;
+    else periodoTexto = `Mês ${String(inicio.getUTCMonth()+1).padStart(2,'0')}/${inicio.getUTCFullYear()}`;
+
+    const totalDias = state.periodo === 'diario' ? 1 : Math.round((fim - inicio) / 86400000) + 1;
+    const contagem = state.periodo === 'diario' ? Math.min(registros.length, 1) : registros.length;
+    header.innerHTML = `
+      <h1>🏠 Fazenda ${state.fazenda} — ${periodoTexto}</h1>
+      <div class="sub">${contagem} de ${totalDias} dia(s) com registro</div>
+    `;
+  }
+
+  function badgeUrgencia(urgencia){
+    if(!urgencia) return '';
+    let cls = 'badge-off';
+    if(urgencia.includes('🔴')) cls = 'badge-danger';
+    else if(urgencia.includes('🟡')) cls = 'badge-warn';
+    else if(urgencia.includes('🟢')) cls = 'badge-on';
+    return `<span class="badge ${cls}">${urgencia}</span>`;
+  }
+
+  function linkTrello(url){
+    if(!url || !/^https:\/\//i.test(url)) return '';
+    return ` <a href="${url}" target="_blank" rel="noopener" class="link-trello">🔗 Ver no Trello</a>`;
+  }
+
+  function badgeStatus(status){
+    const cls = status === 'Feito' ? 'badge-on' : status === 'Em andamento' ? 'badge-warn' : status === 'Será feito' ? 'badge-info' : 'badge-off';
+    return `<span class="badge ${cls}">${status || 'Sem status'}</span>`;
+  }
+
+  function criarCard(icone, titulo, innerHtml){
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h3><span class="ic">${icone}</span>${titulo}</h3>${innerHtml}`;
+    return card;
+  }
+
+  // ===================== PAINEL DIÁRIO =====================
+  function renderDiario(reg){
+    const d = reg.dados;
+    const cards = [];
+
+    // Identificação (Data e Fazenda já aparecem no cabeçalho do painel)
+    cards.push(criarCard('🪪','Identificação', `
+      <div class="kpi-row">
+        <div class="kpi"><div class="num" style="font-size:20px;">${d.responsavel || reg.responsavel || '-'}</div><div class="label">Responsável</div></div>
+      </div>
+    `));
+
+    // Boi Virtual
+    const bv = d.boiVirtual || [];
+    cards.push(criarCard('🌧️','Boi Virtual', BOI_VIRTUAL_LABELS.map(l =>
+      `<span class="badge ${bv.includes(l) ? 'badge-on' : 'badge-off'}">${BOI_VIRTUAL_ICONS[l]} ${l}</span>`).join('')));
+
+    // Rebanho
+    const reb = d.conferenciaRebanho || {};
+    const esperado = Number(reb.totalEsperado) || 0;
+    const encontrado = Number(reb.totalEncontrado) || 0;
+    const diff = esperado - encontrado;
+    cards.push(criarCard('🐄','Conferência de Rebanho', `
+      <div class="kpi-row">
+        <div class="kpi"><div class="num">${esperado}</div><div class="label">Esperado</div></div>
+        <div class="kpi"><div class="num">${encontrado}</div><div class="label">Encontrado</div></div>
+      </div>
+      ${diff !== 0 ? `<div class="alert-danger">⚠️ Faltam ${diff} animal(is)${(reb.pastosDivergentes||[]).length ? ' — Pasto(s): ' + reb.pastosDivergentes.join(', ') : ''}</div>` : ''}
+      ${reb.observacoes ? `<div class="muted" style="margin-top:10px;">Observações: ${reb.observacoes}</div>` : ''}
+    `));
+
+    // Sanidade
+    const trat = (d.sanidadeAnimal || {}).tratamentos || [];
+    cards.push(criarCard('🩺','Sanidade Animal', trat.length ?
+      trat.map(t => `<div class="list-item">🐂 ${t.animal || '-'} — ${t.problema || '-'} <span class="muted">(${t.tratamentoAplicado || '-'})</span></div>`).join('') :
+      '<div class="empty-hint">Nenhum animal tratado hoje.</div>'));
+
+    // Vacinas
+    const vac = (d.vacinasVermifugos || {}).itens || [];
+    cards.push(criarCard('💉','Vacinas e Vermífugos', vac.length ?
+      vac.map(v => `<div class="list-item">${v.tipo}: ${v.produto || '-'} <span class="muted">(${v.qtdAnimais || 0} animais${v.dose ? ' — Dose: ' + v.dose + ' ' + (v.doseUnidade||'') : ''})</span></div>`).join('') :
+      '<div class="empty-hint">Nenhuma aplicação hoje.</div>'));
+
+    // Curral
+    const curral = d.atividadesCurral || {};
+    cards.push(criarCard('🐂','Atividades no Curral', curral.houveAtividade ?
+      (curral.atividades||[]).map(a => `<span class="chip">${a}</span>`).join('') +
+      ((curral.categorias||[]).length ? `<div class="muted" style="margin-top:8px;">Categoria(s) trabalhada(s): ${curral.categorias.join(', ')}</div>` : '') +
+      (curral.quantidade ? `<div class="muted" style="margin-top:4px;">Quantidade de animais: ${curral.quantidade}</div>` : '') +
+      (curral.observacoes ? `<div class="muted" style="margin-top:4px;">Observações: ${curral.observacoes}</div>` : '') :
+      '<div class="empty-hint">Nenhuma atividade hoje.</div>'));
+
+    // Nutrição
+    const misturas = (d.nutricaoMisturas || {}).misturas || [];
+    const totaisNutricao = {};
+    misturas.forEach(m => Object.entries(m).forEach(([k,v]) => totaisNutricao[k] = (totaisNutricao[k]||0) + Number(v)));
+    cards.push(criarCardComGrafico('🌾','Nutrição e Misturas', totaisNutricao, 'kg'));
+
+    // Serviços
+    const servicos = d.servicos || [];
+    cards.push(criarCardServicos(servicos, true));
+
+    // Trator / Bomba
+    const fech = d.fechamento || {};
+    const trator = fech.trator || {};
+    const bomba = fech.bomba || {};
+    cards.push(criarCard('🚜','Trator / Bomba d\'água', `
+      <div class="kpi-row">
+        <div class="kpi"><div class="num">${horasEntre(trator.inicio, trator.fim).toFixed(1)}h</div><div class="label">Trator</div></div>
+        <div class="kpi"><div class="num">${horasEntre(bomba.inicio, bomba.fim).toFixed(1)}h</div><div class="label">Bomba d'água</div></div>
+      </div>
+      ${(trator.motivoUso||[]).length ? '<div style="margin-top:10px;">' + trator.motivoUso.map(m => `<span class="chip">${m}</span>`).join('') + '</div>' : ''}
+    `));
+
+    // Solicitações de Produtos
+    const solicitacoes = (d.solicitacoesProdutos || {}).itens || [];
+    cards.push(criarCard('📦','Solicitações de Produtos', solicitacoes.length ?
+      solicitacoes.map(s => `<div class="list-item">${s.descricao || s.tipo || '-'} <span class="muted">— Qtd: ${s.quantidade || '-'}</span> ${badgeUrgencia(s.urgencia)}${linkTrello(s.linkTrello)}</div>`).join('') :
+      '<div class="empty-hint">Nenhuma solicitação hoje.</div>'));
+
+    // Entrada / Saída de Produtos
+    const movimentos = (d.movimentosProdutos || {}).itens || [];
+    cards.push(criarCard('🔄','Entrada / Saída de Produtos', movimentos.length ?
+      movimentos.map(m => {
+        const localLabel = m.tipo === 'Saída' ? 'Para onde foi' : 'De onde veio';
+        return `<div class="list-item"><span class="badge ${m.tipo === 'Saída' ? 'badge-danger' : 'badge-on'}">${m.tipo || '-'}</span> ${localLabel}: ${m.local || '-'}<div class="muted" style="margin-top:4px;">${(m.produtos||'').replace(/\n/g,'<br>')}</div></div>`;
+      }).join('') :
+      '<div class="empty-hint">Nenhuma entrada ou saída hoje.</div>'));
+
+    // Equipe
+    const equipe = fech.equipe || [];
+    cards.push(criarCard('👥','Equipe do Dia', equipe.length ?
+      equipe.map(p => `<div class="list-item">${p.nome} <span class="badge presenca-${(p.presenca||'').split(' ')[0]}">${p.presenca || 'Não informado'}</span></div>`).join('') :
+      '<div class="empty-hint">Nenhum integrante registrado.</div>'));
+
+    return cards;
+  }
+
+  // ===================== PAINEL SEMANAL / MENSAL =====================
+  function renderAgregado(registros, inicio, fim){
+    const cards = [];
+    const totalDias = Math.round((fim - inicio) / 86400000) + 1;
+
+    // Chuva / eventos do Boi Virtual
+    const contagemBV = {};
+    BOI_VIRTUAL_LABELS.forEach(l => contagemBV[l] = 0);
+    registros.forEach(r => (r.dados.boiVirtual||[]).forEach(l => { if(contagemBV[l] !== undefined) contagemBV[l]++; }));
+    cards.push(criarCard('🌧️','Boi Virtual no Período', `
+      <div class="kpi-row">
+        ${BOI_VIRTUAL_LABELS.map(l => `<div class="kpi"><div class="num">${contagemBV[l]}</div><div class="label">${BOI_VIRTUAL_ICONS[l]} ${l}</div></div>`).join('')}
+      </div>
+    `));
+
+    // Rebanho - linha do tempo
+    const rebanhoLabels = registros.map(r => fmtBR(parseISO(r.data)));
+    const rebanhoEsperado = registros.map(r => Number((r.dados.conferenciaRebanho||{}).totalEsperado) || null);
+    const rebanhoEncontrado = registros.map(r => Number((r.dados.conferenciaRebanho||{}).totalEncontrado) || null);
+    const cardRebanho = criarCard('🐄','Evolução do Rebanho', '<canvas id="chartRebanho"></canvas>');
+    cards.push(cardRebanho);
+
+    // Sanidade + Vacinas por dia
+    const tratPorDia = registros.map(r => ((r.dados.sanidadeAnimal||{}).tratamentos||[]).length);
+    const vacPorDia = registros.map(r => ((r.dados.vacinasVermifugos||{}).itens||[]).length);
+    const totalTrat = tratPorDia.reduce((a,b)=>a+b,0);
+    const totalVac = vacPorDia.reduce((a,b)=>a+b,0);
+    const cardSaude = criarCard('🩺','Sanidade e Vacinas', `
+      <div class="kpi-row">
+        <div class="kpi"><div class="num">${totalTrat}</div><div class="label">Tratamentos</div></div>
+        <div class="kpi"><div class="num">${totalVac}</div><div class="label">Vacinas/Vermífugos</div></div>
+      </div>
+      <canvas id="chartSaude" style="margin-top:14px;"></canvas>
+    `);
+    cards.push(cardSaude);
+
+    // Nutrição total do período
+    const totaisNutricao = {};
+    registros.forEach(r => ((r.dados.nutricaoMisturas||{}).misturas||[]).forEach(m =>
+      Object.entries(m).forEach(([k,v]) => totaisNutricao[k] = (totaisNutricao[k]||0) + Number(v))));
+    cards.push(criarCardComGrafico('🌾','Nutrição — Total do Período', totaisNutricao, 'kg'));
+
+    // Serviços do período
+    const servicosPeriodo = [];
+    registros.forEach(r => (r.dados.servicos||[]).forEach(s => servicosPeriodo.push(s)));
+    cards.push(criarCardServicos(servicosPeriodo));
+
+    // Trator / Bomba total
+    let horasTrator = 0, horasBomba = 0;
+    const motivos = {};
+    registros.forEach(r => {
+      const fech = r.dados.fechamento || {};
+      horasTrator += horasEntre((fech.trator||{}).inicio, (fech.trator||{}).fim);
+      horasBomba += horasEntre((fech.bomba||{}).inicio, (fech.bomba||{}).fim);
+      ((fech.trator||{}).motivoUso||[]).forEach(m => motivos[m] = (motivos[m]||0) + 1);
+    });
+    cards.push(criarCard('🚜','Trator / Bomba d\'água — Total', `
+      <div class="kpi-row">
+        <div class="kpi"><div class="num">${horasTrator.toFixed(1)}h</div><div class="label">Trator</div></div>
+        <div class="kpi"><div class="num">${horasBomba.toFixed(1)}h</div><div class="label">Bomba d'água</div></div>
+      </div>
+      ${Object.keys(motivos).length ? '<div style="margin-top:10px;">' + Object.entries(motivos).map(([m,n]) => `<span class="chip">${m} (${n}x)</span>`).join('') + '</div>' : ''}
+    `));
+
+    // Equipe - presença média
+    const presencaPeso = {'Integral':1,'Meio período':0.5,'Falta':0,'Folga combinada':null};
+    const porPessoa = {};
+    registros.forEach(r => ((r.dados.fechamento||{}).equipe||[]).forEach(p => {
+      if(!porPessoa[p.nome]) porPessoa[p.nome] = { soma:0, dias:0 };
+      const peso = presencaPeso[p.presenca];
+      if(peso !== null && peso !== undefined){ porPessoa[p.nome].soma += peso; porPessoa[p.nome].dias++; }
+    }));
+    const equipeHtml = Object.entries(porPessoa).map(([nome, v]) => {
+      const pct = v.dias ? Math.round((v.soma / v.dias) * 100) : 0;
+      return `<div class="list-item">${nome} <span class="muted">— ${pct}% de presença (${v.dias} dia(s))</span></div>`;
+    }).join('');
+    cards.push(criarCard('👥','Equipe — Presença no Período', equipeHtml || '<div class="empty-hint">Sem registros de equipe.</div>'));
+
+    // KPIs extras só no mensal
+    if(state.periodo === 'mensal'){
+      const nascimentos = contagemBV['Nascimento'];
+      const mortes = contagemBV['Morreu animal'];
+      const abortos = contagemBV['Aborto / Natimorto'];
+      cards.unshift(criarCard('📌','Indicadores do Mês', `
+        <div class="kpi-row">
+          <div class="kpi"><div class="num">${nascimentos}</div><div class="label">Nascimentos</div></div>
+          <div class="kpi"><div class="num">${mortes}</div><div class="label">Mortes</div></div>
+          <div class="kpi"><div class="num">${abortos}</div><div class="label">Abortos</div></div>
+          <div class="kpi"><div class="num">${totalTrat}</div><div class="label">Tratamentos</div></div>
+          <div class="kpi"><div class="num">${totalVac}</div><div class="label">Vacinas</div></div>
+        </div>
+      `));
+    }
+
+    // Gráficos (precisam existir no DOM antes de instanciar — feito após o caller anexar os cards)
+    requestAnimationFrame(() => {
+      const ctxRebanho = document.getElementById('chartRebanho');
+      if(ctxRebanho){
+        chartInstances.rebanho = new Chart(ctxRebanho, {
+          type: 'line',
+          data: { labels: rebanhoLabels, datasets: [
+            { label: 'Esperado', data: rebanhoEsperado, borderColor: '#688A7E', backgroundColor:'#688A7E', tension:.25 },
+            { label: 'Encontrado', data: rebanhoEncontrado, borderColor: '#1A78C2', backgroundColor:'#1A78C2', tension:.25 }
+          ]},
+          options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+        });
+      }
+      const ctxSaude = document.getElementById('chartSaude');
+      if(ctxSaude){
+        chartInstances.saude = new Chart(ctxSaude, {
+          type: 'bar',
+          data: { labels: rebanhoLabels, datasets: [
+            { label:'Tratamentos', data: tratPorDia, backgroundColor:'#688A7E' },
+            { label:'Vacinas', data: vacPorDia, backgroundColor:'#1A78C2' }
+          ]},
+          options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}} }
+        });
+      }
+    });
+
+    return cards;
+  }
+
+  function criarCardComGrafico(icone, titulo, totais, unidade){
+    const chaves = Object.keys(totais);
+    if(chaves.length === 0){
+      return criarCard(icone, titulo, '<div class="empty-hint">Nenhuma mistura registrada.</div>');
+    }
+    const id = 'chart-nutricao-' + Math.random().toString(36).slice(2,8);
+    const card = criarCard(icone, titulo, `<canvas id="${id}"></canvas>`);
+    requestAnimationFrame(() => {
+      const ctx = document.getElementById(id);
+      if(!ctx) return;
+      chartInstances[id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: chaves, datasets: [{ label: unidade, data: chaves.map(k => totais[k]), backgroundColor: '#688A7E' }] },
+        options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+      });
+    });
+    return card;
+  }
+
+  // Texto que descreve o subtipo/detalhe específico de cada serviço, conforme
+  // os campos que o formulário coleta pra cada tipo (Pasto, Bebedouro, Cerca,
+  // Máquina, Outro...). Volta '' quando o tipo não tem detalhe extra (Curral,
+  // Cocho, Estrada) — nesses casos só local + status já bastam.
+  function detalheServico(s){
+    if((s.tiposCerca||[]).length) return s.tiposCerca.join(', ');
+    if(s.subtipo === 'Limpeza' && s.limpezaTipo) return `Limpeza (${s.limpezaTipo})`;
+    if(s.subtipo) return s.subtipo;
+    if(s.maquina) return 'Máquina: ' + s.maquina;
+    return '';
+  }
+
+  function barraStatus(contagem, total){
+    const cores = { 'Feito':'#1B7A4D', 'Em andamento':'#946200', 'Será feito':'#1A78C2', 'Sem status':'#ccc' };
+    const segmentos = Object.entries(contagem).filter(([,n]) => n > 0);
+    return `
+      <div class="status-bar">${segmentos.map(([k,n]) => `<div style="width:${(n/total*100).toFixed(0)}%;background:${cores[k]};"></div>`).join('')}</div>
+      <div class="status-legend-mini">${segmentos.map(([k,n]) => `<span><i style="background:${cores[k]};"></i>${k} ${Math.round(n/total*100)}%</span>`).join('')}</div>
+    `;
+  }
+
+  function criarCardServicos(servicos, mostrarTodos){
+    const statusLabels = ['Feito','Em andamento','Será feito'];
+    const contagem = { 'Feito':0, 'Em andamento':0, 'Será feito':0, 'Sem status':0 };
+    servicos.forEach(s => { contagem[s.status && statusLabels.includes(s.status) ? s.status : 'Sem status']++; });
+
+    if(servicos.length === 0){
+      return criarCard('🔧','Serviços', '<div class="empty-hint">Nenhum serviço registrado.</div>');
+    }
+
+    if(mostrarTodos){
+      // Agrupa por tipo, na ordem em que cada tipo apareceu primeiro no dia.
+      const grupos = [];
+      servicos.forEach(s => {
+        let g = grupos.find(g => g.tipo === s.tipo);
+        if(!g){ g = { tipo: s.tipo, itens: [] }; grupos.push(g); }
+        g.itens.push(s);
+      });
+      const listaHtml = grupos.map(g => `
+        <div class="servico-grupo">
+          <div class="servico-grupo-titulo">${g.tipo || '-'}</div>
+          ${g.itens.map(s => {
+            const detalhe = detalheServico(s);
+            const localTxt = (s.local||[]).length ? s.local.join(', ') : '';
+            const descTxt = (g.tipo === 'Outro' || g.tipo === 'Curral') && s.descricao ? s.descricao : '';
+            const partes = [detalhe, localTxt, descTxt].filter(Boolean).join(' — ');
+            return `<div class="list-item servico-item">${partes || '-'} ${badgeStatus(s.status)}</div>`;
+          }).join('')}
+        </div>
+      `).join('');
+      return criarCard('🔧','Serviços', barraStatus(contagem, servicos.length) + listaHtml);
+    }
+
+    // Semanal/Mensal: mantém o resumo compacto com gráfico de rosca + pendentes.
+    const pendentes = servicos.filter(s => s.status !== 'Feito').slice(0,6);
+    const id = 'chart-servicos-' + Math.random().toString(36).slice(2,8);
+    const card = criarCard('🔧','Serviços', `
+      <canvas id="${id}" style="max-height:180px;"></canvas>
+      ${pendentes.length ? '<div style="margin-top:10px;"><div class="muted" style="margin-bottom:6px;">Pendentes:</div>' +
+        pendentes.map(s => `<div class="list-item">${s.tipo || '-'}${s.local && s.local.length ? ' — ' + s.local.join(', ') : ''} ${badgeStatus(s.status)}</div>`).join('') + '</div>' : ''}
+    `);
+    requestAnimationFrame(() => {
+      const ctx = document.getElementById(id);
+      if(!ctx) return;
+      chartInstances[id] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(contagem),
+          datasets: [{ data: Object.values(contagem), backgroundColor: ['#1B7A4D','#946200','#1A78C2','#ccc'] }]
+        },
+        options: { plugins:{legend:{position:'bottom'}} }
+      });
+    });
+    return card;
+  }
+
+  // ===================== MODO APRESENTAÇÃO =====================
+  function entrarApresentacao(){
+    slides = Array.from(document.querySelectorAll('.card'));
+    if(slides.length === 0) return;
+    slideIndex = 0;
+    document.body.classList.add('apresentando');
+    atualizarSlide();
+  }
+  function sairApresentacao(){
+    document.body.classList.remove('apresentando');
+    slides.forEach(s => s.classList.remove('slide-ativo'));
+  }
+  function atualizarSlide(){
+    slides.forEach((s,i) => s.classList.toggle('slide-ativo', i === slideIndex));
+    document.getElementById('slideCounter').textContent = `${slideIndex+1} / ${slides.length}`;
+  }
+  function exportarSlideAtual(){
+    const ativo = slides[slideIndex];
+    if(!ativo || typeof html2canvas === 'undefined') return;
+    html2canvas(ativo, { backgroundColor:'#ffffff', scale:2 }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `relatorio-${state.fazenda}-${state.periodo}-${slideIndex+1}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+
+  document.getElementById('btnApresentar').addEventListener('click', entrarApresentacao);
+  document.getElementById('btnSairApresentacao').addEventListener('click', sairApresentacao);
+  document.getElementById('btnPrevSlide').addEventListener('click', () => { slideIndex = (slideIndex - 1 + slides.length) % slides.length; atualizarSlide(); });
+  document.getElementById('btnNextSlide').addEventListener('click', () => { slideIndex = (slideIndex + 1) % slides.length; atualizarSlide(); });
+  document.getElementById('btnExportSlide').addEventListener('click', exportarSlideAtual);
+  document.addEventListener('keydown', (e) => {
+    if(!document.body.classList.contains('apresentando')) return;
+    if(e.key === 'ArrowRight') document.getElementById('btnNextSlide').click();
+    if(e.key === 'ArrowLeft') document.getElementById('btnPrevSlide').click();
+    if(e.key === 'Escape') sairApresentacao();
+  });
+
+  // ===================== INIT =====================
+  montarTopbar();
+  carregarDados();
+</script>
+</body>
+</html>
