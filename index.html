@@ -980,7 +980,7 @@
   // pra não travar o preenchimento do relatório do dia.
   function carregarCadastros(){
     const temDados = obj => obj && Object.keys(obj).length > 0;
-    fetch(API_URL_CADASTROS)
+    fetch(API_URL_CADASTROS + '?t=' + Date.now())
       .then(res => res.json())
       .then(dados => {
         if(temDados(dados.funcionarios)) EQUIPE = dados.funcionarios;
