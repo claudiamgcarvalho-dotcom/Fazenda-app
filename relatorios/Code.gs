@@ -29,6 +29,12 @@ var HORAS_HEADERS = ['Data', 'Fazenda', 'Funcionario', 'DiaSemana', 'Presenca', 
 var RESUMO_MENSAL_HEADERS = ['Ano', 'Mes', 'Funcionario', 'TotalHoras', 'TotalDias'];
 var DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
+// Planilha separada "Estoque Nutrição" (uma aba por fazenda). Cole aqui o ID
+// da planilha depois de criá-la — até lá, fica desativado sem quebrar o envio
+// do relatório diário (mesmo padrão de proteção das outras planilhas auxiliares).
+var ESTOQUE_SPREADSHEET_ID = 'COLE_AQUI_ID_DA_PLANILHA_ESTOQUE';
+var ESTOQUE_HEADERS = ['Timestamp', 'Data', 'Fazenda', 'Produto', 'Tipo', 'QtdSacos', 'QtdKg', 'Observacoes'];
+
 function doPost(e) {
   var raw = (e && e.postData && e.postData.contents) || '';
   var dados = {};
@@ -54,6 +60,7 @@ function doPost(e) {
 
   registrarSolicitacoes(dados, fazenda);
   registrarHoras(dados, fazenda);
+  registrarConsumo(dados, fazenda);
 
   return ContentService.createTextOutput(JSON.stringify({ ok: true, id: id }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -197,6 +204,63 @@ function atualizarResumoMensal(ss, fazenda, dataISO) {
   Object.keys(totais).forEach(function (nome) {
     abaResumo.appendRow([ano, mes, nome, totais[nome].horas, totais[nome].dias]);
   });
+}
+
+// Copia o consumo de nutrição do dia pra planilha "Estoque Nutrição" (uma
+// linha por produto consumido na mistura). Soma todas as misturas do dia em
+// cada produto antes de gravar — se o dia tiver múltiplos envios, apaga o
+// consumo anterior e regrava só o último, igual ao padrão do Controle de Horas.
+function registrarConsumo(dados, fazenda) {
+  if (!(dados.nutricaoMisturas || {}).houveMistura) return;
+  var misturas = (dados.nutricaoMisturas || {}).misturas || [];
+  if (!misturas.length || !dados.data) return;
+
+  var consumoPorProduto = {};
+  misturas.forEach(function (mistura) {
+    Object.keys(mistura).forEach(function (produto) {
+      var kg = Number(mistura[produto]) || 0;
+      if (kg > 0) consumoPorProduto[produto] = (consumoPorProduto[produto] || 0) + kg;
+    });
+  });
+  if (!Object.keys(consumoPorProduto).length) return;
+
+  try {
+    var ss = SpreadsheetApp.openById(ESTOQUE_SPREADSHEET_ID);
+    var aba = getOrCreateAbaEstoque(ss, fazenda);
+
+    removerConsumoDoDia(aba, dados.data);
+
+    // Grava a data como objeto Date pra que as fórmulas da aba Dashboard
+    // consigam filtrar por mês usando TEXT(Data,"yyyy-MM") no Sheets.
+    var p = String(dados.data).split('-');
+    var dataDate = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+
+    Object.keys(consumoPorProduto).forEach(function (produto) {
+      aba.appendRow([new Date(), dataDate, fazenda, produto, 'Consumo', '', consumoPorProduto[produto], '']);
+    });
+  } catch (err) {
+    // Planilha de Estoque ainda não configurada — ignora silenciosamente.
+  }
+}
+
+function getOrCreateAbaEstoque(ss, fazenda) {
+  var nomeAba = fazenda || FALLBACK_SHEET_NAME;
+  var aba = ss.getSheetByName(nomeAba);
+  if (!aba) aba = ss.insertSheet(nomeAba);
+  if (aba.getLastRow() === 0) aba.appendRow(ESTOQUE_HEADERS);
+  return aba;
+}
+
+// Remove linhas de Consumo do dia antes de regravar (evita duplicidade em
+// múltiplos envios no mesmo dia). Usa a coluna Data (índice 1) como chave,
+// não o Timestamp — pra não afetar entradas manuais de outras datas.
+function removerConsumoDoDia(aba, dataISO) {
+  var linhas = aba.getDataRange().getValues();
+  for (var i = linhas.length - 1; i >= 1; i--) {
+    if (formatarData(linhas[i][1]) === dataISO && linhas[i][4] === 'Consumo') {
+      aba.deleteRow(i + 1);
+    }
+  }
 }
 
 // API de leitura para os painéis (Fase 4). Devolve os registros diários

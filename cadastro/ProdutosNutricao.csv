@@ -1,7 +1,7 @@
-Nome,Unidade,FazendasAtivas
-Sal Branco,kg,"CB,PB,SH"
-Sal Mineral 160,kg,"CB,PB,SH"
-Fubá,kg,"CB,PB,SH"
-Ureia,kg,"CB,PB,SH"
-Soja,kg,"CB,PB,SH"
-Promil,kg,"CB,PB,SH"
+Nome,Unidade,FazendasAtivas,TamanhoSaco
+Sal Branco,kg,"CB,PB,SH",0
+Sal Mineral 160,kg,"CB,PB,SH",0
+Fubá,kg,"CB,PB,SH",0
+Ureia,kg,"CB,PB,SH",0
+Soja,kg,"CB,PB,SH",0
+Promil,kg,"CB,PB,SH",0

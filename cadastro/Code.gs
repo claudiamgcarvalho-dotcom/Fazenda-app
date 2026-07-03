@@ -15,7 +15,7 @@ function doGet(e) {
     funcionarios: lerPorFazenda(ss, 'Funcionarios', farmCodes),
     pastos: lerPorFazenda(ss, 'Pastos', farmCodes),
     produtosNutricao: lerCatalogo(ss, 'ProdutosNutricao', farmCodes, function (r) {
-      return { nome: r.Nome, unidade: r.Unidade };
+      return { nome: r.Nome, unidade: r.Unidade, tamanhoSaco: Number(r.TamanhoSaco) || 0 };
     }),
     categoriasAnimal: lerCatalogo(ss, 'CategoriasAnimal', farmCodes, function (r) {
       return r.Nome;
