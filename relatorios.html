@@ -193,8 +193,9 @@
   .estoque-table th{text-align:left;padding:5px 5px;color:var(--gray);font-weight:700;
     border-bottom:2px solid var(--accent);font-size:10px;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;}
   .estoque-table td{padding:6px 5px;border-bottom:1px solid #EEF2F2;vertical-align:middle;}
-  .estoque-table td:nth-child(2){white-space:nowrap;}
-  .estoque-table td:nth-child(4){white-space:nowrap;}
+  .estoque-table td:nth-child(2),
+  .estoque-table td:nth-child(3),
+  .estoque-table td:nth-child(5){white-space:nowrap;}
   .estoque-table tr:last-child td{border-bottom:none;}
   .produto-nome{font-weight:700;color:#394A59;}
   .qtd-sacos{color:var(--gray);font-size:12px;margin-left:4px;}
@@ -837,11 +838,12 @@
         } else {
           alertaClass = 'alerta-ok'; alertaTexto = `🟢 ${p.diasRestantes} dias`;
         }
-        const sacos = p.estoqueSacos !== null ? `<span class="qtd-sacos">/ ${p.estoqueSacos} sc</span>` : '';
-        const consumo = p.consumoMedioMensal > 0 ? `${p.consumoMedioMensal} kg/mês` : '—';
+        const sc = p.estoqueSacos !== null ? p.estoqueSacos : '—';
+        const consumo = p.consumoMedioMensal > 0 ? `${p.consumoMedioMensal}` : '—';
         return `<tr>
           <td class="produto-nome">${nome}</td>
-          <td>${p.estoqueKg} kg ${sacos}</td>
+          <td>${p.estoqueKg}</td>
+          <td>${sc}</td>
           <td>${consumo}</td>
           <td class="${alertaClass}">${alertaTexto}</td>
         </tr>`;
@@ -849,7 +851,7 @@
       return `<div class="card"><h3>🌾 ${fazenda}</h3>
         <div class="estoque-table-wrap"><table class="estoque-table">
           <thead><tr>
-            <th>Produto</th><th>Estoque</th><th>Consumo/mês</th><th>Dias</th>
+            <th>Produto</th><th>Kg</th><th>Sc</th><th>Consumo/<br>mês</th><th>Status</th>
           </tr></thead>
           <tbody>${linhas}</tbody>
         </table></div></div>`;
