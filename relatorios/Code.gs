@@ -426,14 +426,18 @@ function doGetEstoque() {
 
       Object.keys(porProduto).forEach(function (produto) {
         var dp = porProduto[produto];
-        var totalUlt3 = 0;
-        var mesesComDados = 0;
-        ultimos3.forEach(function (mes) {
-          var v = dp.consumoPorMes[mes] || 0;
-          totalUlt3 += v;
-          if (v > 0) mesesComDados++;
-        });
-        var consumoMedio = mesesComDados > 0 ? totalUlt3 / mesesComDados : 0;
+        // Conta só a sequência consecutiva de meses com dados a partir do mais
+        // recente. Se um mês no meio estiver zerado, para — recomeça do mês
+        // seguinte com consumo (ex: jul✓ jun✗ mai✓ → usa só julho).
+        var totalConsec = 0;
+        var mesesConsec = 0;
+        for (var m = 0; m < ultimos3.length; m++) {
+          var v = dp.consumoPorMes[ultimos3[m]] || 0;
+          if (v === 0) break;
+          totalConsec += v;
+          mesesConsec++;
+        }
+        var consumoMedio = mesesConsec > 0 ? totalConsec / mesesConsec : 0;
         var saco = tamanhoSaco[produto] || 0;
         var estoqueArred = Math.round(dp.estoqueKg * 10) / 10;
 
