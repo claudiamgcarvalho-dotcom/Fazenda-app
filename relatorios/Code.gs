@@ -403,6 +403,11 @@ function doGetEstoque() {
         var qtdKg   = Number(linhas[i][6]) || 0;         // col G
         var dataLinha = linhas[i][1];                     // col B
 
+        // Se QtdKg estiver vazio, calcula a partir de QtdSacos × TamanhoSaco da Referencia.
+        if (qtdKg === 0) {
+          var qtdSacos = Number(linhas[i][5]) || 0;
+          qtdKg = qtdSacos * (tamanhoSaco[produto] || 0);
+        }
         if (!produto || !tipo || qtdKg === 0) continue;
         if (!porProduto[produto]) porProduto[produto] = { estoqueKg: 0, consumoPorMes: {} };
 
