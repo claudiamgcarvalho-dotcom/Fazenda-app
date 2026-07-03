@@ -187,11 +187,13 @@
   .estoque-header{margin-bottom:16px;}
   .estoque-header h1{font-size:20px;color:#394A59;font-weight:800;}
   .estoque-atualizado{font-size:12px;color:var(--gray);margin-top:2px;}
-  .estoque-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;}
-  .estoque-table th{text-align:left;padding:6px 8px;color:var(--gray);font-weight:700;
-    border-bottom:2px solid var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:0.4px;}
-  .estoque-table td{padding:9px 8px;border-bottom:1px solid #EEF2F2;vertical-align:middle;}
+  .estoque-table-wrap{overflow-x:auto;}
+  .estoque-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+  .estoque-table th{text-align:left;padding:5px 5px;color:var(--gray);font-weight:700;
+    border-bottom:2px solid var(--accent);font-size:10px;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;}
+  .estoque-table td{padding:6px 5px;border-bottom:1px solid #EEF2F2;vertical-align:middle;}
   .estoque-table td:nth-child(2){white-space:nowrap;}
+  .estoque-table td:nth-child(4){white-space:nowrap;}
   .estoque-table tr:last-child td{border-bottom:none;}
   .produto-nome{font-weight:700;color:#394A59;}
   .qtd-sacos{color:var(--gray);font-size:12px;margin-left:4px;}
@@ -826,7 +828,7 @@
         if(p.estoqueKg <= 0){
           alertaClass = 'alerta-zerado'; alertaTexto = '⚫ Zerado';
         } else if(p.diasRestantes === null){
-          alertaClass = 'alerta-sem-hist'; alertaTexto = '⚪ Sem histórico';
+          alertaClass = 'alerta-sem-hist'; alertaTexto = '⚪ —';
         } else if(p.diasRestantes < 30){
           alertaClass = 'alerta-critico'; alertaTexto = `🔴 ${p.diasRestantes} dias`;
         } else if(p.diasRestantes < 60){
@@ -844,12 +846,12 @@
         </tr>`;
       }).join('');
       return `<div class="card"><h3>🌾 ${fazenda}</h3>
-        <table class="estoque-table">
+        <div class="estoque-table-wrap"><table class="estoque-table">
           <thead><tr>
-            <th>Produto</th><th>Estoque</th><th>Consumo médio</th><th>Situação</th>
+            <th>Produto</th><th>Estoque</th><th>Consumo/mês</th><th>Situação</th>
           </tr></thead>
           <tbody>${linhas}</tbody>
-        </table></div>`;
+        </table></div></div>`;
     }).join('');
   }
 
