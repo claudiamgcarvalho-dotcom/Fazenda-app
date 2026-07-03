@@ -842,15 +842,15 @@
         const p = produtos[nome];
         let alertaClass, alertaTexto;
         if(p.estoqueKg <= 0){
-          alertaClass = 'alerta-zerado'; alertaTexto = '⚫ Zerado';
+          alertaClass = 'alerta-zerado'; alertaTexto = '⚫';
         } else if(p.diasRestantes === null){
-          alertaClass = 'alerta-sem-hist'; alertaTexto = '⚪ —';
+          alertaClass = 'alerta-sem-hist'; alertaTexto = '⚪';
         } else if(p.diasRestantes < 15){
-          alertaClass = 'alerta-critico'; alertaTexto = `🔴 ${p.diasRestantes} dias`;
+          alertaClass = 'alerta-critico'; alertaTexto = '🔴';
         } else if(p.diasRestantes < 30){
-          alertaClass = 'alerta-atencao'; alertaTexto = `🟡 ${p.diasRestantes} dias`;
+          alertaClass = 'alerta-atencao'; alertaTexto = '🟡';
         } else {
-          alertaClass = 'alerta-ok'; alertaTexto = `🟢 ${p.diasRestantes} dias`;
+          alertaClass = 'alerta-ok'; alertaTexto = '🟢';
         }
         const sc = p.estoqueSacos !== null ? p.estoqueSacos : '—';
         const consumo = p.consumoMedioMensal > 0 ? `${p.consumoMedioMensal}` : '—';
