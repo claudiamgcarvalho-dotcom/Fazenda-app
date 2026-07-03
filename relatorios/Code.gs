@@ -271,6 +271,10 @@ function removerConsumoDoDia(aba, dataISO) {
 // Exemplo: ?fazenda=CB&inicio=2026-06-01&fim=2026-06-30
 function doGet(e) {
   var params = (e && e.parameter) || {};
+
+  // Rota separada para o painel de Estoque (não precisa de fazenda/inicio/fim).
+  if (params.action === 'estoque') return doGetEstoque();
+
   var fazenda = (params.fazenda || '').trim();
   var inicio = params.inicio || '';
   var fim = params.fim || '';
@@ -354,6 +358,89 @@ function enriquecerComLinksTrello(registros, fazenda) {
     });
   } catch (err) {
     // Planilha de Solicitações ainda não configurada — segue sem o link.
+  }
+}
+
+// Lê a planilha "Fazenda App - Estoque" e devolve, por fazenda e por produto,
+// o estoque atual (kg e sacos) e o consumo médio dos últimos 3 meses completos.
+function doGetEstoque() {
+  var FAZENDAS = ['CB', 'PB', 'SH'];
+  try {
+    var ss = SpreadsheetApp.openById(ESTOQUE_SPREADSHEET_ID);
+
+    // Lê TamanhoSaco da aba Referencia (col A = produto, col B = kg/saco).
+    var tamanhoSaco = {};
+    var refSheet = ss.getSheetByName('Referencia');
+    if (refSheet) {
+      var refData = refSheet.getDataRange().getValues();
+      for (var r = 1; r < refData.length; r++) {
+        var nomeProd = String(refData[r][0] || '').trim();
+        if (nomeProd) tamanhoSaco[nomeProd] = Number(refData[r][1]) || 0;
+      }
+    }
+
+    // Os 3 meses completos antes do mês atual (ex.: jul/26 → jun, mai, abr).
+    var hoje = new Date();
+    var ultimos3 = [];
+    for (var m = 1; m <= 3; m++) {
+      var d = new Date(hoje.getFullYear(), hoje.getMonth() - m, 1);
+      var mn = d.getMonth() + 1;
+      ultimos3.push(d.getFullYear() + '-' + (mn < 10 ? '0' : '') + mn);
+    }
+
+    var resultado = {};
+    FAZENDAS.forEach(function (fazenda) {
+      var aba = ss.getSheetByName(fazenda);
+      resultado[fazenda] = {};
+      if (!aba || aba.getLastRow() <= 1) return;
+
+      var linhas = aba.getDataRange().getValues();
+      var porProduto = {};
+
+      for (var i = 1; i < linhas.length; i++) {
+        var produto = String(linhas[i][3] || '').trim(); // col D
+        var tipo    = String(linhas[i][4] || '').trim(); // col E
+        var qtdKg   = Number(linhas[i][6]) || 0;         // col G
+        var dataLinha = linhas[i][1];                     // col B
+
+        if (!produto || !tipo || qtdKg === 0) continue;
+        if (!porProduto[produto]) porProduto[produto] = { estoqueKg: 0, consumoPorMes: {} };
+
+        if (tipo === 'Estoque Inicial' || tipo === 'Compra') {
+          porProduto[produto].estoqueKg += qtdKg;
+        } else if (tipo === 'Consumo' || tipo === 'Saída') {
+          porProduto[produto].estoqueKg -= qtdKg;
+          if (tipo === 'Consumo') {
+            var mesAno = formatarData(dataLinha).substring(0, 7); // "yyyy-MM"
+            if (mesAno.length === 7) {
+              porProduto[produto].consumoPorMes[mesAno] = (porProduto[produto].consumoPorMes[mesAno] || 0) + qtdKg;
+            }
+          }
+        }
+      }
+
+      Object.keys(porProduto).forEach(function (produto) {
+        var dp = porProduto[produto];
+        var totalUlt3 = 0;
+        ultimos3.forEach(function (mes) { totalUlt3 += (dp.consumoPorMes[mes] || 0); });
+        var consumoMedio = totalUlt3 / 3;
+        var saco = tamanhoSaco[produto] || 0;
+        var estoqueArred = Math.round(dp.estoqueKg * 10) / 10;
+
+        resultado[fazenda][produto] = {
+          estoqueKg: estoqueArred,
+          estoqueSacos: saco > 0 ? Math.round(estoqueArred / saco * 10) / 10 : null,
+          consumoMedioMensal: Math.round(consumoMedio * 10) / 10,
+          diasRestantes: consumoMedio > 0 ? Math.round(estoqueArred / (consumoMedio / 30)) : null,
+          tamanhoSaco: saco
+        };
+      });
+    });
+
+    var agora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
+    return jsonOutput({ ok: true, estoque: resultado, atualizadoEm: agora });
+  } catch (err) {
+    return jsonOutput({ ok: false, error: err.message, estoque: {} });
   }
 }
 

@@ -181,6 +181,24 @@
   }
   .present-bar button:hover{background:rgba(255,255,255,.28);}
   #slideCounter{font-size:13px;font-weight:700;color:#D0D8DF;}
+
+  /* ===================== PAINEL ESTOQUE ===================== */
+  #estoquePanel{padding:18px;max-width:1100px;margin:0 auto;}
+  .estoque-header{margin-bottom:16px;}
+  .estoque-header h1{font-size:20px;color:#394A59;font-weight:800;}
+  .estoque-atualizado{font-size:12px;color:var(--gray);margin-top:2px;}
+  .estoque-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;}
+  .estoque-table th{text-align:left;padding:6px 8px;color:var(--gray);font-weight:700;
+    border-bottom:2px solid var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:0.4px;}
+  .estoque-table td{padding:9px 8px;border-bottom:1px solid #EEF2F2;vertical-align:middle;}
+  .estoque-table tr:last-child td{border-bottom:none;}
+  .produto-nome{font-weight:700;color:#394A59;}
+  .qtd-sacos{color:var(--gray);font-size:12px;margin-left:4px;}
+  .alerta-ok{color:var(--ok);font-weight:700;}
+  .alerta-atencao{color:var(--warn);font-weight:700;}
+  .alerta-critico{color:var(--danger);font-weight:700;}
+  .alerta-zerado{color:var(--gray);}
+  .alerta-sem-hist{color:#bbb;}
 </style>
 </head>
 <body>
@@ -192,11 +210,20 @@
     <div class="btn-group" id="periodButtons"></div>
     <input type="date" id="dataRef">
     <button class="btn-present" id="btnApresentar">🖥️ Modo Apresentação</button>
+    <button class="pill-btn" id="btnEstoque">📦 Estoque</button>
   </div>
 
   <div id="panelContainer">
     <div class="panel-header" id="panelHeader"></div>
     <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+
+  <div id="estoquePanel" style="display:none;">
+    <div class="estoque-header">
+      <h1>📦 Estoque de Nutrição</h1>
+      <div class="estoque-atualizado" id="estoqueAtualizado"></div>
+    </div>
+    <div class="cards-grid" id="estoqueCards"></div>
   </div>
 
   <div class="present-bar" id="presentBar">
@@ -214,7 +241,7 @@
   const BOI_VIRTUAL_LABELS = ['Choveu','Mudei o gado de pasto','Distribuí nutrição','Nascimento','Aborto / Natimorto','Morreu animal'];
   const BOI_VIRTUAL_ICONS = {'Choveu':'🌧️','Mudei o gado de pasto':'🐄','Distribuí nutrição':'🌾','Nascimento':'🐣','Aborto / Natimorto':'⚠️','Morreu animal':'💀'};
 
-  const state = { fazenda: 'CB', periodo: 'diario', dataRef: todayISO() };
+  const state = { fazenda: 'CB', periodo: 'diario', dataRef: todayISO(), modo: 'relatorios' };
   let chartInstances = {};
   let slides = [];
   let slideIndex = 0;
@@ -261,14 +288,20 @@
     farmBox.innerHTML = FARM_CODES.map(c =>
       `<button type="button" class="pill-btn farm-btn" data-value="${c}">${c}</button>`).join('');
     farmBox.querySelectorAll('.farm-btn').forEach(btn => {
-      btn.addEventListener('click', () => { state.fazenda = btn.dataset.value; atualizarSelecoes(); carregarDados(); });
+      btn.addEventListener('click', () => {
+        if(state.modo === 'estoque') sairEstoque();
+        state.fazenda = btn.dataset.value; atualizarSelecoes(); carregarDados();
+      });
     });
 
     const periodBox = document.getElementById('periodButtons');
     periodBox.innerHTML = PERIODOS.map(p =>
       `<button type="button" class="pill-btn period-btn" data-value="${p.id}">${p.label}</button>`).join('');
     periodBox.querySelectorAll('.period-btn').forEach(btn => {
-      btn.addEventListener('click', () => { state.periodo = btn.dataset.value; atualizarSelecoes(); carregarDados(); });
+      btn.addEventListener('click', () => {
+        if(state.modo === 'estoque') sairEstoque();
+        state.periodo = btn.dataset.value; atualizarSelecoes(); carregarDados();
+      });
     });
 
     const dataInput = document.getElementById('dataRef');
@@ -280,6 +313,7 @@
   function atualizarSelecoes(){
     document.querySelectorAll('.farm-btn').forEach(b => b.classList.toggle('selected', b.dataset.value === state.fazenda));
     document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('selected', b.dataset.value === state.periodo));
+    document.getElementById('btnEstoque').classList.toggle('selected', state.modo === 'estoque');
   }
 
   // ===================== BUSCA DE DADOS =====================
@@ -729,6 +763,7 @@
     });
   }
 
+  document.getElementById('btnEstoque').addEventListener('click', mostrarEstoque);
   document.getElementById('btnApresentar').addEventListener('click', entrarApresentacao);
   document.getElementById('btnSairApresentacao').addEventListener('click', sairApresentacao);
   document.getElementById('btnPrevSlide').addEventListener('click', () => { slideIndex = (slideIndex - 1 + slides.length) % slides.length; atualizarSlide(); });
@@ -740,6 +775,82 @@
     if(e.key === 'ArrowLeft') document.getElementById('btnPrevSlide').click();
     if(e.key === 'Escape') sairApresentacao();
   });
+
+  // ===================== PAINEL ESTOQUE =====================
+  function mostrarEstoque(){
+    state.modo = 'estoque';
+    document.getElementById('panelContainer').style.display = 'none';
+    document.getElementById('btnApresentar').style.display = 'none';
+    document.getElementById('dataRef').style.display = 'none';
+    document.getElementById('estoquePanel').style.display = 'block';
+    atualizarSelecoes();
+    fetchEstoque();
+  }
+  function sairEstoque(){
+    state.modo = 'relatorios';
+    document.getElementById('estoquePanel').style.display = 'none';
+    document.getElementById('panelContainer').style.display = 'block';
+    document.getElementById('btnApresentar').style.display = '';
+    document.getElementById('dataRef').style.display = '';
+    atualizarSelecoes();
+  }
+  async function fetchEstoque(){
+    const cardsEl = document.getElementById('estoqueCards');
+    cardsEl.innerHTML = '<div class="status-msg">Carregando estoque...</div>';
+    try {
+      const resp = await fetch(API_URL_RELATORIOS + '?action=estoque');
+      const json = await resp.json();
+      if(!json.ok) throw new Error(json.error || 'Erro ao buscar estoque');
+      renderEstoque(json);
+    } catch(err){
+      cardsEl.innerHTML = `<div class="status-msg erro">Erro ao carregar estoque: ${err.message}</div>`;
+    }
+  }
+  function renderEstoque(json){
+    const estoque = json.estoque || {};
+    document.getElementById('estoqueAtualizado').textContent =
+      json.atualizadoEm ? 'Atualizado em ' + json.atualizadoEm : '';
+
+    const ORDER = ['CB','PB','SH'];
+    document.getElementById('estoqueCards').innerHTML = ORDER.map(fazenda => {
+      const produtos = estoque[fazenda] || {};
+      const nomes = Object.keys(produtos);
+      if(!nomes.length){
+        return `<div class="card"><h3>🌾 ${fazenda}</h3>
+          <p style="color:var(--gray);font-size:13px;margin-top:8px;">Sem dados de estoque ainda.</p></div>`;
+      }
+      const linhas = nomes.map(nome => {
+        const p = produtos[nome];
+        let alertaClass, alertaTexto;
+        if(p.estoqueKg <= 0){
+          alertaClass = 'alerta-zerado'; alertaTexto = '⚫ Zerado';
+        } else if(p.diasRestantes === null){
+          alertaClass = 'alerta-sem-hist'; alertaTexto = '⚪ Sem histórico';
+        } else if(p.diasRestantes < 30){
+          alertaClass = 'alerta-critico'; alertaTexto = `🔴 ${p.diasRestantes} dias`;
+        } else if(p.diasRestantes < 60){
+          alertaClass = 'alerta-atencao'; alertaTexto = `🟡 ${p.diasRestantes} dias`;
+        } else {
+          alertaClass = 'alerta-ok'; alertaTexto = `🟢 ${p.diasRestantes} dias`;
+        }
+        const sacos = p.estoqueSacos !== null ? `<span class="qtd-sacos">/ ${p.estoqueSacos} sc</span>` : '';
+        const consumo = p.consumoMedioMensal > 0 ? `${p.consumoMedioMensal} kg/mês` : '—';
+        return `<tr>
+          <td class="produto-nome">${nome}</td>
+          <td>${p.estoqueKg} kg ${sacos}</td>
+          <td>${consumo}</td>
+          <td class="${alertaClass}">${alertaTexto}</td>
+        </tr>`;
+      }).join('');
+      return `<div class="card"><h3>🌾 ${fazenda}</h3>
+        <table class="estoque-table">
+          <thead><tr>
+            <th>Produto</th><th>Estoque</th><th>Consumo médio</th><th>Situação</th>
+          </tr></thead>
+          <tbody>${linhas}</tbody>
+        </table></div>`;
+    }).join('');
+  }
 
   // ===================== INIT =====================
   montarTopbar();
