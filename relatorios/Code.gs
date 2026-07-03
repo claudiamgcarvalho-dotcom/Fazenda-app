@@ -32,7 +32,7 @@ var DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 
 // Planilha separada "Estoque Nutrição" (uma aba por fazenda). Cole aqui o ID
 // da planilha depois de criá-la — até lá, fica desativado sem quebrar o envio
 // do relatório diário (mesmo padrão de proteção das outras planilhas auxiliares).
-var ESTOQUE_SPREADSHEET_ID = 'COLE_AQUI_ID_DA_PLANILHA_ESTOQUE';
+var ESTOQUE_SPREADSHEET_ID = '1uwVG9sbCZNUFFzU84BwUu7MHXlWK-7yBjqJEOWk-JJw';
 var ESTOQUE_HEADERS = ['Timestamp', 'Data', 'Fazenda', 'Produto', 'Tipo', 'QtdSacos', 'QtdKg', 'Observacoes'];
 
 function doPost(e) {
