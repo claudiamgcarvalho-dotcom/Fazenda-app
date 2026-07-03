@@ -204,6 +204,8 @@
   .alerta-critico{color:var(--danger);font-weight:700;}
   .alerta-zerado{color:var(--gray);}
   .alerta-sem-hist{color:#bbb;}
+  .estoque-legenda{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:14px;padding:10px 8px;
+    font-size:12px;color:var(--gray);}
 </style>
 </head>
 <body>
@@ -229,6 +231,13 @@
       <div class="estoque-atualizado" id="estoqueAtualizado"></div>
     </div>
     <div class="cards-grid" id="estoqueCards"></div>
+    <div class="estoque-legenda">
+      <span>⚫ Zerado</span>
+      <span>⚪ Sem histórico</span>
+      <span>🔴 Crítico &lt;30 dias</span>
+      <span>🟡 Atenção &lt;60 dias</span>
+      <span>🟢 OK</span>
+    </div>
   </div>
 
   <div class="present-bar" id="presentBar">
