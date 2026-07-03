@@ -183,7 +183,8 @@
   #slideCounter{font-size:13px;font-weight:700;color:#D0D8DF;}
 
   /* ===================== PAINEL ESTOQUE ===================== */
-  #estoquePanel{padding:18px;max-width:1100px;margin:0 auto;}
+  #estoquePanel{padding:12px 8px;}
+  #estoqueCards{grid-template-columns:repeat(3,1fr);}
   .estoque-header{margin-bottom:16px;}
   .estoque-header h1{font-size:20px;color:#394A59;font-weight:800;}
   .estoque-atualizado{font-size:12px;color:var(--gray);margin-top:2px;}
@@ -848,7 +849,7 @@
       return `<div class="card"><h3>🌾 ${fazenda}</h3>
         <div class="estoque-table-wrap"><table class="estoque-table">
           <thead><tr>
-            <th>Produto</th><th>Estoque</th><th>Consumo/mês</th><th>Situação</th>
+            <th>Produto</th><th>Estoque</th><th>Consumo/mês</th><th>Dias</th>
           </tr></thead>
           <tbody>${linhas}</tbody>
         </table></div></div>`;
