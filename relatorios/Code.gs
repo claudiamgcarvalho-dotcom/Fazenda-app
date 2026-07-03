@@ -427,8 +427,13 @@ function doGetEstoque() {
       Object.keys(porProduto).forEach(function (produto) {
         var dp = porProduto[produto];
         var totalUlt3 = 0;
-        ultimos3.forEach(function (mes) { totalUlt3 += (dp.consumoPorMes[mes] || 0); });
-        var consumoMedio = totalUlt3 / 3;
+        var mesesComDados = 0;
+        ultimos3.forEach(function (mes) {
+          var v = dp.consumoPorMes[mes] || 0;
+          totalUlt3 += v;
+          if (v > 0) mesesComDados++;
+        });
+        var consumoMedio = mesesComDados > 0 ? totalUlt3 / mesesComDados : 0;
         var saco = tamanhoSaco[produto] || 0;
         var estoqueArred = Math.round(dp.estoqueKg * 10) / 10;
 
