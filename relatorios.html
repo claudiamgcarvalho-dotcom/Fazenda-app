@@ -233,10 +233,10 @@
     <div class="cards-grid" id="estoqueCards"></div>
     <div class="estoque-legenda">
       <span>⚫ Zerado</span>
-      <span>⚪ Sem histórico</span>
-      <span>🔴 Crítico &lt;30 dias</span>
-      <span>🟡 Atenção &lt;60 dias</span>
+      <span>🔴 Crítico &lt;15 dias</span>
+      <span>🟡 Atenção &lt;30 dias</span>
       <span>🟢 OK</span>
+      <span>⚪ Sem histórico</span>
     </div>
   </div>
 
@@ -828,7 +828,12 @@
     const ORDER = ['CB','PB','SH'];
     document.getElementById('estoqueCards').innerHTML = ORDER.map(fazenda => {
       const produtos = estoque[fazenda] || {};
-      const nomes = Object.keys(produtos);
+      const prioridade = p =>
+        p.estoqueKg <= 0 ? 0 :
+        p.diasRestantes !== null && p.diasRestantes < 15 ? 1 :
+        p.diasRestantes !== null && p.diasRestantes < 30 ? 2 :
+        p.diasRestantes !== null ? 3 : 4;
+      const nomes = Object.keys(produtos).sort((a,b) => prioridade(produtos[a]) - prioridade(produtos[b]));
       if(!nomes.length){
         return `<div class="card"><h3>🌾 ${fazenda}</h3>
           <p style="color:var(--gray);font-size:13px;margin-top:8px;">Sem dados de estoque ainda.</p></div>`;
@@ -840,9 +845,9 @@
           alertaClass = 'alerta-zerado'; alertaTexto = '⚫ Zerado';
         } else if(p.diasRestantes === null){
           alertaClass = 'alerta-sem-hist'; alertaTexto = '⚪ —';
-        } else if(p.diasRestantes < 30){
+        } else if(p.diasRestantes < 15){
           alertaClass = 'alerta-critico'; alertaTexto = `🔴 ${p.diasRestantes} dias`;
-        } else if(p.diasRestantes < 60){
+        } else if(p.diasRestantes < 30){
           alertaClass = 'alerta-atencao'; alertaTexto = `🟡 ${p.diasRestantes} dias`;
         } else {
           alertaClass = 'alerta-ok'; alertaTexto = `🟢 ${p.diasRestantes} dias`;
