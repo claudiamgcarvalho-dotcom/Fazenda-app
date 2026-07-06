@@ -828,15 +828,8 @@
     const ORDER = ['CB','PB','SH'];
     document.getElementById('estoqueCards').innerHTML = ORDER.map(fazenda => {
       const produtos = estoque[fazenda] || {};
-      const prioridade = p =>
-        p.estoqueKg <= 0 ? 0 :
-        p.diasRestantes !== null && p.diasRestantes < 15 ? 1 :
-        p.diasRestantes !== null && p.diasRestantes < 30 ? 2 :
-        p.diasRestantes !== null ? 3 : 4;
       const ordemCanonica = ['Sal Branco','Sal Mineral 160','Fubá','Ureia','Soja','Promil'];
       const nomes = Object.keys(produtos).sort((a,b) => {
-        const dp = prioridade(produtos[a]) - prioridade(produtos[b]);
-        if(dp !== 0) return dp;
         const oa = ordemCanonica.indexOf(a), ob = ordemCanonica.indexOf(b);
         return (oa === -1 ? 999 : oa) - (ob === -1 ? 999 : ob);
       });
