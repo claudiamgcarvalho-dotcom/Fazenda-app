@@ -413,7 +413,7 @@ function doGetEstoque() {
 
         if (tipo === 'Estoque Inicial' || tipo === 'Compra') {
           porProduto[produto].estoqueKg += qtdKg;
-        } else if (tipo === 'Consumo' || tipo === 'Saída') {
+        } else if (tipo === 'Consumo' || tipo === 'Saída' || tipo === 'Saida') {
           porProduto[produto].estoqueKg -= qtdKg;
           if (tipo === 'Consumo') {
             var mesAno = formatarData(dataLinha).substring(0, 7); // "yyyy-MM"
