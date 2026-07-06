@@ -46,7 +46,16 @@ function doPost(e) {
 
   var fazenda = (dados.fazenda || '').trim();
   var sheet = getOrCreateSheet(fazenda);
-  var id = [dados.data || '', fazenda || 'SEM_FAZENDA', new Date().getTime()].join('_');
+  var id = dados._id || [dados.data || '', fazenda || 'SEM_FAZENDA', new Date().getTime()].join('_');
+
+  // Deduplicação: se já existe linha com este id, retorna ok sem inserir
+  var existingData = sheet.getDataRange().getValues();
+  for (var i = 1; i < existingData.length; i++) {
+    if (String(existingData[i][1]) === String(id)) {
+      return ContentService.createTextOutput(JSON.stringify({ ok: true, id: id, duplicate: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
 
   sheet.appendRow([
     new Date(),

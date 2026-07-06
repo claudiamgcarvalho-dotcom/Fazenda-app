@@ -2616,13 +2616,20 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(dados)
     })
-      .then(res => res.json())
-      .then(json => {
-        if(!json || json.ok !== true) throw new Error('Resposta inesperada da API');
-        removerPendenteLocal(dados._id);
-        if(statusEl){
-          statusEl.className = 'sync-status sync-ok';
-          statusEl.innerHTML = '✅ Dados salvos no banco de dados';
+      .then(res => res.text().then(text => ({ httpOk: res.ok, text })))
+      .then(({ httpOk, text }) => {
+        let json = null;
+        try { json = JSON.parse(text); } catch(e) {}
+        // Sucesso confirmado pelo JSON, ou por HTTP 200 quando o JSON não pode ser lido
+        // (isso acontece com redirecionamentos do Google Apps Script em redes móveis)
+        if((json && json.ok === true) || (httpOk && !json)){
+          removerPendenteLocal(dados._id);
+          if(statusEl){
+            statusEl.className = 'sync-status sync-ok';
+            statusEl.innerHTML = '✅ Dados salvos no banco de dados';
+          }
+        } else {
+          throw new Error('Resposta inesperada da API');
         }
       })
       .catch(() => {
