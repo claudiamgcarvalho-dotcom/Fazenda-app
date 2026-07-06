@@ -833,7 +833,13 @@
         p.diasRestantes !== null && p.diasRestantes < 15 ? 1 :
         p.diasRestantes !== null && p.diasRestantes < 30 ? 2 :
         p.diasRestantes !== null ? 3 : 4;
-      const nomes = Object.keys(produtos).sort((a,b) => prioridade(produtos[a]) - prioridade(produtos[b]));
+      const ordemCanonica = ['Sal Branco','Sal Mineral 160','Fubá','Ureia','Soja','Promil'];
+      const nomes = Object.keys(produtos).sort((a,b) => {
+        const dp = prioridade(produtos[a]) - prioridade(produtos[b]);
+        if(dp !== 0) return dp;
+        const oa = ordemCanonica.indexOf(a), ob = ordemCanonica.indexOf(b);
+        return (oa === -1 ? 999 : oa) - (ob === -1 ? 999 : ob);
+      });
       if(!nomes.length){
         return `<div class="card"><h3>🌾 ${fazenda}</h3>
           <p style="color:var(--gray);font-size:13px;margin-top:8px;">Sem dados de estoque ainda.</p></div>`;
