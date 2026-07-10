@@ -252,6 +252,7 @@
   const FARM_CODES = ['CB','PB','SH'];
   const PERIODOS = [{id:'diario',label:'Diário'},{id:'semanal',label:'Semanal'},{id:'mensal',label:'Mensal'}];
   const API_URL_RELATORIOS = 'https://script.google.com/macros/s/AKfycbwnvVXB0iZ-nV0z9Rm2hx1ArBd8vjWnoiRpUOCw5q0F6rJ580lEPGk7mJIe0ffX_tSs/exec';
+  const API_URL_SAUDE_ANIMAL = 'https://script.google.com/macros/s/AKfycbxy1t-HzQl7GbjHB8MkAxs6m9Cu2Vi017k3n7GLVTEVh5BMmcg9xusM0pPlwLh2BMacEw/exec';
   const BOI_VIRTUAL_LABELS = ['Choveu','Mudei o gado de pasto','Distribuí nutrição','Nascimento','Aborto / Natimorto','Morreu animal'];
   const BOI_VIRTUAL_ICONS = {'Choveu':'🌧️','Mudei o gado de pasto':'🐄','Distribuí nutrição':'🌾','Nascimento':'🐣','Aborto / Natimorto':'⚠️','Morreu animal':'💀'};
 
@@ -348,20 +349,34 @@
     const url = `${API_URL_RELATORIOS}?fazenda=${encodeURIComponent(state.fazenda)}&inicio=${fmtISO(inicio)}&fim=${fmtISO(fim)}`;
 
     try {
-      const resp = await fetch(url);
-      const json = await resp.json();
+      const promises = [fetch(url)];
+      if(state.periodo === 'mensal'){
+        promises.push(fetch(API_URL_SAUDE_ANIMAL + '?action=vacinas'));
+        promises.push(fetch(API_URL_SAUDE_ANIMAL + '?action=medicamentos'));
+      }
+      const resps = await Promise.all(promises);
+      const json = await resps[0].json();
       if(!json.ok){
         grid.innerHTML = `<div class="status-msg erro">⚠️ ${json.error || 'Erro ao carregar dados.'}</div>`;
         return;
       }
-      renderPainel(json.registros, inicio, fim);
+      let saudeAnimal = null;
+      if(state.periodo === 'mensal'){
+        const jVac = await resps[1].json();
+        const jMed = await resps[2].json();
+        saudeAnimal = {
+          vacinas: jVac.ok ? jVac.dados : [],
+          medicamentos: jMed.ok ? jMed.dados : []
+        };
+      }
+      renderPainel(json.registros, inicio, fim, saudeAnimal);
     } catch (err) {
       grid.innerHTML = '<div class="status-msg erro">⚠️ Não foi possível conectar à planilha. Verifique sua internet e tente de novo.</div>';
     }
   }
 
   // ===================== RENDER GERAL =====================
-  function renderPainel(registros, inicio, fim){
+  function renderPainel(registros, inicio, fim, saudeAnimal){
     Object.values(chartInstances).forEach(c => c.destroy());
     chartInstances = {};
     const grid = document.getElementById('cardsGrid');
@@ -387,7 +402,7 @@
         document.getElementById('panelHeader').appendChild(aviso);
       }
     } else {
-      cards = renderAgregado(registros, inicio, fim);
+      cards = renderAgregado(registros, inicio, fim, saudeAnimal);
     }
 
     cards.forEach(c => grid.appendChild(c));
@@ -533,7 +548,7 @@
   }
 
   // ===================== PAINEL SEMANAL / MENSAL =====================
-  function renderAgregado(registros, inicio, fim){
+  function renderAgregado(registros, inicio, fim, saudeAnimal){
     const cards = [];
     const totalDias = Math.round((fim - inicio) / 86400000) + 1;
 
@@ -554,18 +569,23 @@
     const cardRebanho = criarCard('🐄','Evolução do Rebanho', '<canvas id="chartRebanho"></canvas>');
     cards.push(cardRebanho);
 
-    // Sanidade + Vacinas por dia
+    // Sanidade
     const tratPorDia = registros.map(r => ((r.dados.sanidadeAnimal||{}).tratamentos||[]).length);
-    const vacPorDia = registros.map(r => ((r.dados.vacinasVermifugos||{}).itens||[]).length);
-    const totalTrat = tratPorDia.reduce((a,b)=>a+b,0);
-    const totalVac = vacPorDia.reduce((a,b)=>a+b,0);
-    const cardSaude = criarCard('🩺','Sanidade e Vacinas', `
-      <div class="kpi-row">
-        <div class="kpi"><div class="num">${totalTrat}</div><div class="label">Tratamentos</div></div>
-        <div class="kpi"><div class="num">${totalVac}</div><div class="label">Vacinas/Vermífugos</div></div>
-      </div>
-      <canvas id="chartSaude" style="margin-top:14px;"></canvas>
-    `);
+    const vacPorDia  = registros.map(r => ((r.dados.vacinasVermifugos||{}).itens||[]).length);
+    const totalTrat  = tratPorDia.reduce((a,b)=>a+b,0);
+    const totalVac   = vacPorDia.reduce((a,b)=>a+b,0);
+    let cardSaude;
+    if(state.periodo === 'mensal' && saudeAnimal){
+      cardSaude = criarCardSaudeAnimal(saudeAnimal, inicio, fim);
+    } else {
+      cardSaude = criarCard('🩺','Sanidade e Vacinas', `
+        <div class="kpi-row">
+          <div class="kpi"><div class="num">${totalTrat}</div><div class="label">Tratamentos</div></div>
+          <div class="kpi"><div class="num">${totalVac}</div><div class="label">Vacinas/Vermífugos</div></div>
+        </div>
+        <canvas id="chartSaude" style="margin-top:14px;"></canvas>
+      `);
+    }
     cards.push(cardSaude);
 
     // Nutrição total do período
@@ -650,9 +670,65 @@
           options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}} }
         });
       }
+      const ctxVacinas = document.getElementById('chartVacinas');
+      if(ctxVacinas && window._vacinasChartData){
+        const vcd = window._vacinasChartData;
+        chartInstances.vacinas = new Chart(ctxVacinas, {
+          type: 'bar',
+          data: {
+            labels: vcd.map(p => p.nome + (p.tipo === 'Vermífugo' ? ' (Vermíf.)' : ' (Vac.)')),
+            datasets: [{ data: vcd.map(p => p.total), backgroundColor: vcd.map(p => p.tipo === 'Vermífugo' ? '#688A7E' : '#1A78C2') }]
+          },
+          options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{stepSize:1}}} }
+        });
+        delete window._vacinasChartData;
+      }
     });
 
     return cards;
+  }
+
+  function criarCardSaudeAnimal(saudeAnimal, inicio, fim){
+    const mesISO  = fmtISO(inicio).substring(0, 7);
+    const fazenda = state.fazenda;
+    const vacinas = (saudeAnimal.vacinas || []).filter(v =>
+      v.Fazenda === fazenda && (v.Data || '').startsWith(mesISO)
+    );
+    const medicamentos = (saudeAnimal.medicamentos || []).filter(m =>
+      m.Fazenda === fazenda && (m.Data || '').startsWith(mesISO)
+    );
+    const porProduto = {};
+    vacinas.forEach(v => {
+      const nome = String(v.Nome || 'Sem nome').trim();
+      const tipo = String(v.Tipo || 'Vacina').trim();
+      const qtd  = Number(v['Qtd Animais'] || 0);
+      if(!porProduto[nome]) porProduto[nome] = { nome, tipo, total: 0 };
+      porProduto[nome].total += qtd;
+    });
+    const produtos      = Object.values(porProduto);
+    const totalCabecas  = produtos.reduce((s, p) => s + p.total, 0);
+    const totalTrat     = medicamentos.length;
+    window._vacinasChartData = produtos;
+    const vacinasHtml = produtos.length > 0
+      ? `<canvas id="chartVacinas" style="margin-top:10px;max-height:160px;"></canvas>`
+      : '<div class="empty-hint" style="margin-top:8px;">Nenhuma aplicação registrada no mês.</div>';
+    return criarCard('🩺', 'Sanidade Animal', `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:8px;">💉 Vacinas e Vermífugos</div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="num">${vacinas.length}</div><div class="label">Aplicações</div></div>
+          <div class="kpi"><div class="num">${totalCabecas}</div><div class="label">Cabeças</div></div>
+        </div>
+        ${vacinasHtml}
+      </div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:8px;">💊 Medicamentos</div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="num">${totalTrat}</div><div class="label">Tratamentos</div></div>
+        </div>
+      </div>
+    `);
   }
 
   function criarCardComGrafico(icone, titulo, totais, unidade){
