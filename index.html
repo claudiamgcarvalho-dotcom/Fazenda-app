@@ -642,13 +642,15 @@
         </div>
       </div>
 
-      <div class="field">
-        <label>🔢 Total de animais <strong>ESPERADOS</strong></label>
-        <input type="number" min="0" inputmode="numeric" id="totalEsperado2" placeholder="0">
-      </div>
-      <div class="field">
-        <label>🔢 Total de animais <strong>ENCONTRADOS</strong></label>
-        <input type="number" min="0" inputmode="numeric" id="totalEncontrado2" placeholder="0">
+      <div id="totaisRebanhoWrap" style="display:none;">
+        <div class="field">
+          <label>🔢 Total de animais <strong>ESPERADOS</strong></label>
+          <input type="number" min="0" inputmode="numeric" id="totalEsperado2" placeholder="0">
+        </div>
+        <div class="field">
+          <label>🔢 Total de animais <strong>ENCONTRADOS</strong></label>
+          <input type="number" min="0" inputmode="numeric" id="totalEncontrado2" placeholder="0">
+        </div>
       </div>
 
       <div id="divergDetails" style="display:none;">
@@ -661,6 +663,21 @@
           <p class="hint">Toque e segure (ou deslize) para selecionar mais de um pasto.</p>
           <select id="pastoList2" class="pasto-select-multi" multiple size="6"></select>
           <div class="multi-preview" id="pastoPreview">Nenhum selecionado</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>🐮 Conferiu vacas prenhas?</label>
+        <div id="prenhasNaTag" style="display:flex;align-items:center;justify-content:space-between;background:#f4f4f4;border:1px solid #ddd;border-radius:10px;padding:11px 14px;">
+          <span style="color:#888;font-size:14px;">Sem vacas prenhas no momento</span>
+          <button type="button" onclick="dismissPrenhasNA()" style="background:none;border:none;font-size:18px;color:#bbb;cursor:pointer;line-height:1;padding:0 0 0 12px;" title="Tem vacas prenhas">✕</button>
+        </div>
+        <div id="prenhasSimNaoWrap" style="display:none;margin-top:8px;">
+          <div class="btn-group">
+            <button type="button" class="choice-btn prenhas-btn" data-value="sim">✅ Sim, conferiu</button>
+            <button type="button" class="choice-btn prenhas-btn" data-value="nao">❌ Não conferiu</button>
+          </div>
+          <p class="hint" style="margin-top:6px;text-align:right;"><button type="button" onclick="restorePrenhasNA()" style="background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;padding:0;">← Sem vacas prenhas</button></p>
         </div>
       </div>
 
@@ -680,17 +697,14 @@
         </div>
       </div>
 
-      <div class="field">
-        <label>Houve tratamento de animal hoje?</label>
-        <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="trat" data-value="sim">✅ Sim</button>
-          <button type="button" class="binary-btn" data-group="trat" data-value="nao">❌ Não</button>
-        </div>
-      </div>
-
-      <div id="tratDetails" style="display:none;">
+      <div id="tratDetails">
         <div id="tratamentosList"></div>
         <button type="button" class="add-btn" id="btnAddTratamento" onclick="addTratamento()">➕ Adicionar Tratamento</button>
+        <label class="checkbox-card" id="nenhumTratamentoWrap" style="margin-top:16px;">
+          <input type="checkbox" id="nenhumTratamento">
+          <span class="cb-icon">✅</span>
+          <span>Nenhum animal doente ou medicado hoje</span>
+        </label>
       </div>
     </section>
 
@@ -699,22 +713,19 @@
       <div class="section-header">
         <div class="section-icon">💉</div>
         <div>
-          <h2>Vacinas e Vermífugos</h2>
+          <h2>Vacinas, Vermífugos e Carrapaticidas</h2>
           <div class="section-sub">Aplicações realizadas hoje</div>
         </div>
       </div>
 
-      <div class="field">
-        <label>Houve aplicação de vacina ou vermífugo hoje?</label>
-        <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="vac" data-value="sim">✅ Sim</button>
-          <button type="button" class="binary-btn" data-group="vac" data-value="nao">❌ Não</button>
-        </div>
-      </div>
-
-      <div id="vacDetails" style="display:none;">
+      <div id="vacDetails">
         <div id="vacinasList"></div>
         <button type="button" class="add-btn" id="btnAddVacina" onclick="addVacina()">➕ Adicionar Aplicação</button>
+        <label class="checkbox-card" id="nenhumVacinaWrap" style="margin-top:16px;">
+          <input type="checkbox" id="nenhumVacina">
+          <span class="cb-icon">✅</span>
+          <span>Nenhuma aplicação de vacina ou vermífugo hoje</span>
+        </label>
       </div>
     </section>
 
@@ -778,17 +789,14 @@
         </div>
       </div>
 
-      <div class="field">
-        <label>Fez mistura hoje?</label>
-        <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="mistura" data-value="sim">✅ Sim</button>
-          <button type="button" class="binary-btn" data-group="mistura" data-value="nao">❌ Não</button>
-        </div>
-      </div>
-
-      <div id="misturaDetails" style="display:none;">
+      <div id="misturaDetails">
         <div id="misturasList"></div>
         <button type="button" class="add-btn" id="btnAddMistura" onclick="addMistura()">➕ Adicionar Mistura</button>
+        <label class="checkbox-card" id="nenhumMisturaWrap" style="margin-top:16px;">
+          <input type="checkbox" id="nenhumMistura">
+          <span class="cb-icon">✅</span>
+          <span>Nenhuma mistura feita hoje</span>
+        </label>
       </div>
     </section>
 
@@ -823,42 +831,37 @@
         </div>
       </div>
 
-      <div class="field">
-        <label>Tem alguma solicitação de produto ou serviço?</label>
-        <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="solic" data-value="sim">✅ Sim</button>
-          <button type="button" class="binary-btn" data-group="solic" data-value="nao">❌ Não</button>
-        </div>
-      </div>
-
-      <div id="solicDetails" style="display:none;">
+      <div id="solicDetails">
         <div id="produtosList"></div>
         <button type="button" class="add-btn" id="btnAddProduto" onclick="addProduto()">➕ Adicionar Produto</button>
+        <label class="checkbox-card" id="nenhumSolicitacaoWrap" style="margin-top:16px;">
+          <input type="checkbox" id="nenhumSolicitacao">
+          <span class="cb-icon">✅</span>
+          <span>Nenhuma solicitação hoje</span>
+        </label>
       </div>
     </section>
 
-    <!-- ============ SEÇÃO 9: ENTRADA/SAÍDA DE PRODUTOS ============ -->
+    <!-- ============ SEÇÃO 9: CHEGADA E SAÍDA DE PRODUTOS ============ -->
     <section class="form-section" data-section="9">
       <div class="section-header">
         <div class="section-icon">🔄</div>
         <div>
-          <h2>Entrada/Saída de Produtos</h2>
+          <h2>Chegada e Saída de Produtos</h2>
           <div class="section-sub">Produtos que chegaram ou saíram da fazenda</div>
         </div>
       </div>
 
-      <div class="field">
-        <label>Houve entrada ou saída de produtos hoje?</label>
-        <div class="btn-group">
-          <button type="button" class="binary-btn" data-group="movimento" data-value="sim">✅ Sim</button>
-          <button type="button" class="binary-btn" data-group="movimento" data-value="nao">❌ Não</button>
-        </div>
+      <div id="movimentosList"></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button type="button" class="add-btn" id="btnAddChegada" onclick="addMovimento('Chegada')" style="flex:1;">📥 Chegada</button>
+        <button type="button" class="add-btn" id="btnAddSaida" onclick="addMovimento('Saída')" style="flex:1;">📤 Saída</button>
       </div>
-
-      <div id="movimentoDetails" style="display:none;">
-        <div id="movimentosList"></div>
-        <button type="button" class="add-btn" id="btnAddMovimento" onclick="addMovimento()">➕ Adicionar Movimentação</button>
-      </div>
+      <label class="checkbox-card" id="nenhumMovimentoWrap" style="margin-top:8px;">
+        <input type="checkbox" id="nenhumMovimento">
+        <span class="cb-icon">✅</span>
+        <span>Nenhuma Chegada/Saída hoje</span>
+      </label>
     </section>
 
     <!-- ============ SEÇÃO 10: FECHAMENTO ============ -->
@@ -965,7 +968,7 @@
 
   // ===================== CONFIG GERAL =====================
   const totalSections = 10;
-  const sectionNames = ["Identificação","Conferência de Rebanho","Sanidade Animal","Vacinas e Vermífugos","Atividades no Curral","Nutrição e Misturas","Serviços","Solicitações de Produtos","Entrada/Saída de Produtos","Fechamento"];
+  const sectionNames = ["Identificação","Conferência de Rebanho","Sanidade Animal","Vacinas, Vermífugos e Carrapaticidas","Atividades no Curral","Nutrição e Misturas","Serviços","Solicitações de Produtos","Chegada e Saída de Produtos","Fechamento"];
   const sectionIcons = ["🪪","🐄","🩺","💉","🐂","🌾","🔧","📦","🔄","✅"];
   let currentSection = 1;
   let currentFazenda = '';
@@ -1040,6 +1043,22 @@
 
     document.getElementById('nenhumServico').addEventListener('change', function(){
       document.getElementById('btnAddManutencao').disabled = this.checked;
+    });
+    document.getElementById('nenhumTratamento').addEventListener('change', function(){
+      document.getElementById('btnAddTratamento').disabled = this.checked;
+    });
+    document.getElementById('nenhumVacina').addEventListener('change', function(){
+      document.getElementById('btnAddVacina').disabled = this.checked;
+    });
+    document.getElementById('nenhumMistura').addEventListener('change', function(){
+      document.getElementById('btnAddMistura').disabled = this.checked;
+    });
+    document.getElementById('nenhumSolicitacao').addEventListener('change', function(){
+      document.getElementById('btnAddProduto').disabled = this.checked;
+    });
+    document.getElementById('nenhumMovimento').addEventListener('change', function(){
+      document.getElementById('btnAddChegada').disabled = this.checked;
+      document.getElementById('btnAddSaida').disabled = this.checked;
     });
 
     document.getElementById('pastoList2').addEventListener('change', function(){
@@ -1190,63 +1209,46 @@
       }
     }
     if(n === 3){
-      if(!document.querySelector('.binary-btn[data-group="trat"].selected')){
-        alert('⚠️ Por favor, informe se houve tratamento de animal hoje.');
-        highlightField(document.querySelector('.binary-btn[data-group="trat"]').parentElement);
+      const tratCards = document.querySelectorAll('#tratamentosList .item-card');
+      if(tratCards.length === 0 && !document.getElementById('nenhumTratamento').checked){
+        alert('⚠️ Adicione um tratamento ou marque "Nenhum animal doente ou medicado hoje".');
+        highlightField(document.getElementById('nenhumTratamentoWrap'));
         return false;
       }
-      if(document.querySelector('.binary-btn[data-group="trat"][data-value="sim"].selected')){
-        const tratCards = document.querySelectorAll('#tratamentosList .item-card');
-        if(tratCards.length === 0){
-          alert('⚠️ Adicione pelo menos um tratamento.');
-          highlightField(document.getElementById('btnAddTratamento'));
-          return false;
-        }
-        for(const card of tratCards){
-          const campos = [
-            {el: card.querySelector('.trat-animal'), label: 'Identificação do Animal'},
-            {el: card.querySelector('.trat-problema'), label: 'Problema / Sintoma'},
-            {el: card.querySelector('.trat-aplicado'), label: 'Tratamento Aplicado'},
-            {el: card.querySelector('.trat-responsavel'), label: 'Responsável'}
-          ];
-          const vazio = campos.find(c => !c.el.value.trim());
-          if(vazio){
-            const titulo = card.querySelector('.item-title').textContent;
-            card.classList.remove('collapsed');
-            document.getElementById('btnAddTratamento').disabled = true;
-            alert(`⚠️ Preencha o campo "${vazio.label}" do ${titulo}.`);
-            highlightField(vazio.el);
-            return false;
-          }
-          if(!card.classList.contains('collapsed')){
-            card.classList.add('collapsed');
-            document.getElementById('btnAddTratamento').disabled = false;
-          }
-        }
+      for(const card of tratCards){
+        const titulo = card.querySelector('.item-title').textContent;
+        const categoria = Array.from(card.querySelector('.trat-categoria').selectedOptions).map(o => o.value);
+        const qtd = card.querySelector('.trat-qtd').value;
+        const sintomas = Array.from(card.querySelector('.trat-sintomas').selectedOptions).map(o => o.value);
+        const aplicado = card.querySelector('.trat-aplicado').value.trim();
+        const responsavel = card.querySelector('.trat-responsavel').value;
+        card.classList.remove('collapsed');
+        document.getElementById('btnAddTratamento').disabled = true;
+        if(!categoria.length){ alert(`⚠️ Selecione a Categoria Animal do ${titulo}.`); highlightField(card.querySelector('.trat-categoria')); return false; }
+        if(!qtd || Number(qtd) < 1){ alert(`⚠️ Informe a Quantidade de Animais do ${titulo}.`); highlightField(card.querySelector('.trat-qtd')); return false; }
+        if(!sintomas.length){ alert(`⚠️ Selecione ao menos um Sintoma do ${titulo}.`); highlightField(card.querySelector('.trat-sintomas')); return false; }
+        if(!aplicado){ alert(`⚠️ Preencha o Tratamento Aplicado do ${titulo}.`); highlightField(card.querySelector('.trat-aplicado')); return false; }
+        if(!responsavel){ alert(`⚠️ Selecione o Responsável do ${titulo}.`); highlightField(card.querySelector('.trat-responsavel')); return false; }
+        card.classList.add('collapsed');
+        document.getElementById('btnAddTratamento').disabled = false;
       }
     }
     if(n === 4){
-      if(!document.querySelector('.binary-btn[data-group="vac"].selected')){
-        alert('⚠️ Por favor, informe se houve aplicação de vacina ou vermífugo hoje.');
-        highlightField(document.querySelector('.binary-btn[data-group="vac"]').parentElement);
+      const vacCards = document.querySelectorAll('#vacinasList .item-card');
+      if(vacCards.length === 0 && !document.getElementById('nenhumVacina').checked){
+        alert('⚠️ Adicione uma aplicação ou marque "Nenhuma aplicação de vacina ou vermífugo hoje".');
+        highlightField(document.getElementById('nenhumVacinaWrap'));
         return false;
       }
-      if(document.querySelector('.binary-btn[data-group="vac"][data-value="sim"].selected')){
-        const vacCards = document.querySelectorAll('#vacinasList .item-card');
-        if(vacCards.length === 0){
-          alert('⚠️ Adicione pelo menos uma aplicação.');
-          highlightField(document.getElementById('btnAddVacina'));
-          return false;
-        }
-        for(const card of vacCards){
-          const campos = [
-            {el: card.querySelector('.vac-produto'), label: 'Nome do Produto'},
-            {el: card.querySelector('.vac-qtd'), label: 'Quantidade de Animais'},
-            {el: card.querySelector('.vac-categoria'), label: 'Categoria Animal'},
-            {el: card.querySelector('.vac-dose'), label: 'Dose aplicada'},
-            {el: card.querySelector('.vac-dose-unidade'), label: 'Unidade da dose'}
-          ];
-          const vazio = campos.find(c => !c.el.value.trim());
+      for(const card of vacCards){
+        const campos = [
+          {el: card.querySelector('.vac-produto'), label: 'Nome do Produto'},
+          {el: card.querySelector('.vac-qtd'), label: 'Quantidade de Animais'},
+          {el: card.querySelector('.vac-categoria'), label: 'Categoria Animal'},
+          {el: card.querySelector('.vac-dose'), label: 'Dose aplicada'},
+          {el: card.querySelector('.vac-dose-unidade'), label: 'Unidade da dose'}
+        ];
+        const vazio = campos.find(c => !c.el.value.trim());
         if(vazio){
           const titulo = card.querySelector('.item-title').textContent;
           card.classList.remove('collapsed');
@@ -1258,7 +1260,6 @@
         if(!card.classList.contains('collapsed')){
           card.classList.add('collapsed');
           document.getElementById('btnAddVacina').disabled = false;
-        }
         }
       }
     }
@@ -1286,35 +1287,26 @@
       }
     }
     if(n === 6){
-      const mixSelecionado = document.querySelector('.binary-btn[data-group="mistura"].selected');
-      if(!mixSelecionado){
-        alert('⚠️ Por favor, informe se fez mistura hoje.');
-        highlightField(document.querySelector('.binary-btn[data-group="mistura"]').parentElement);
+      const mixCards = document.querySelectorAll('#misturasList .item-card');
+      if(mixCards.length === 0 && !document.getElementById('nenhumMistura').checked){
+        alert('⚠️ Adicione uma mistura ou marque "Nenhuma mistura feita hoje".');
+        highlightField(document.getElementById('nenhumMisturaWrap'));
         return false;
       }
-      const mixSim = document.querySelector('.binary-btn[data-group="mistura"][data-value="sim"].selected');
-      if(mixSim){
-        const mixCards = document.querySelectorAll('#misturasList .item-card');
-        if(mixCards.length === 0){
-          alert('⚠️ Adicione ao menos uma mistura clicando em "+ Adicionar Mistura".');
-          highlightField(document.getElementById('btnAddMistura'));
+      for(const card of mixCards){
+        const campos = (MIX_CAMPOS[currentFazenda] || []).map(c => ({el: card.querySelector('.' + c.cls), label: c.label}));
+        const algumPreenchido = campos.some(c => c.el.value.trim() !== '');
+        if(!algumPreenchido){
+          const titulo = card.querySelector('.item-title').textContent;
+          card.classList.remove('collapsed');
+          document.getElementById('btnAddMistura').disabled = true;
+          alert(`⚠️ Preencha ao menos um produto da ${titulo}.`);
+          highlightField(campos[0].el);
           return false;
         }
-        for(const card of mixCards){
-          const campos = (MIX_CAMPOS[currentFazenda] || []).map(c => ({el: card.querySelector('.' + c.cls), label: c.label}));
-          const algumPreenchido = campos.some(c => c.el.value.trim() !== '');
-          if(!algumPreenchido){
-            const titulo = card.querySelector('.item-title').textContent;
-            card.classList.remove('collapsed');
-            document.getElementById('btnAddMistura').disabled = true;
-            alert(`⚠️ Preencha ao menos um produto da ${titulo}.`);
-            highlightField(campos[0].el);
-            return false;
-          }
-          if(!card.classList.contains('collapsed')){
-            card.classList.add('collapsed');
-            document.getElementById('btnAddMistura').disabled = false;
-          }
+        if(!card.classList.contains('collapsed')){
+          card.classList.add('collapsed');
+          document.getElementById('btnAddMistura').disabled = false;
         }
       }
     }
@@ -1359,19 +1351,13 @@
       }
     }
     if(n === 8){
-      if(!document.querySelector('.binary-btn[data-group="solic"].selected')){
-        alert('⚠️ Por favor, informe se tem alguma solicitação de produto ou serviço.');
-        highlightField(document.querySelector('.binary-btn[data-group="solic"]').parentElement);
+      const prodCards = document.querySelectorAll('#produtosList .item-card');
+      if(prodCards.length === 0 && !document.getElementById('nenhumSolicitacao').checked){
+        alert('⚠️ Adicione uma solicitação ou marque "Nenhuma solicitação hoje".');
+        highlightField(document.getElementById('nenhumSolicitacaoWrap'));
         return false;
       }
-      if(document.querySelector('.binary-btn[data-group="solic"][data-value="sim"].selected')){
-        const prodCards = document.querySelectorAll('#produtosList .item-card');
-        if(prodCards.length === 0){
-          alert('⚠️ Adicione pelo menos um produto ou serviço solicitado.');
-          highlightField(document.getElementById('btnAddProduto'));
-          return false;
-        }
-        for(const card of prodCards){
+      for(const card of prodCards){
           if(!isProdutoCompleto(card)){
             card.classList.remove('collapsed');
             document.getElementById('btnAddProduto').disabled = true;
@@ -1388,36 +1374,29 @@
             return false;
           }
           if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
-        }
       }
     }
     if(n === 9){
-      if(!document.querySelector('.binary-btn[data-group="movimento"].selected')){
-        alert('⚠️ Por favor, informe se houve entrada ou saída de produtos hoje.');
-        highlightField(document.querySelector('.binary-btn[data-group="movimento"]').parentElement);
+      const movCards = document.querySelectorAll('#movimentosList .item-card');
+      if(movCards.length === 0 && !document.getElementById('nenhumMovimento').checked){
+        alert('⚠️ Adicione uma Chegada/Saída ou marque "Nenhuma Chegada/Saída hoje".');
+        highlightField(document.getElementById('nenhumMovimentoWrap'));
         return false;
       }
-      if(document.querySelector('.binary-btn[data-group="movimento"][data-value="sim"].selected')){
-        const movCards = document.querySelectorAll('#movimentosList .item-card');
-        if(movCards.length === 0){
-          alert('⚠️ Adicione pelo menos uma movimentação.');
-          highlightField(document.getElementById('btnAddMovimento'));
+      for(const card of movCards){
+        if(!isMovimentoCompleto(card)){
+          card.classList.remove('collapsed');
+          document.getElementById('btnAddChegada').disabled = true;
+          document.getElementById('btnAddSaida').disabled = true;
+          const tipo = card.dataset.tipo || '';
+          const local = card.querySelector('.mov-local');
+          const produtos = card.querySelector('.mov-produtos');
+          const localLabel = tipo === 'Saída' ? 'Para onde foi' : 'De onde veio';
+          if(!local.value.trim()){ alert(`⚠️ Preencha o campo "${localLabel}".`); highlightField(local); return false; }
+          if(!produtos.value.trim()){ alert('⚠️ Preencha os produtos e quantidades.'); highlightField(produtos); return false; }
           return false;
         }
-        for(const card of movCards){
-          if(!isMovimentoCompleto(card)){
-            card.classList.remove('collapsed');
-            document.getElementById('btnAddMovimento').disabled = true;
-            const tipo = card.querySelector('.mov-tipo-btn.selected');
-            const local = card.querySelector('.mov-local');
-            const produtos = card.querySelector('.mov-produtos');
-            if(!tipo){ alert('⚠️ Selecione o Tipo (Entrada ou Saída).'); highlightField(card.querySelector('.mov-tipo-group')); return false; }
-            if(!local.value.trim()){ alert(`⚠️ Preencha o campo "${tipo.dataset.value === 'Entrada' ? 'De onde veio' : 'Para onde foi'}".`); highlightField(local); return false; }
-            if(!produtos.value.trim()){ alert('⚠️ Preencha os produtos e quantidades.'); highlightField(produtos); return false; }
-            return false;
-          }
-          if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
-        }
+        if(!card.classList.contains('collapsed')) card.classList.add('collapsed');
       }
     }
     if(n === 10){
@@ -1479,8 +1458,33 @@
       btn.addEventListener('click', () => {
         document.querySelectorAll('.conferiu-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
+        const mostrarTotais = btn.dataset.value === 'todo' || btn.dataset.value === 'parte';
+        document.getElementById('totaisRebanhoWrap').style.display = mostrarTotais ? 'block' : 'none';
+        if(!mostrarTotais){
+          document.getElementById('totalEsperado2').value = '';
+          document.getElementById('totalEncontrado2').value = '';
+          document.getElementById('divergDetails').style.display = 'none';
+        }
       });
     });
+
+    document.querySelectorAll('.prenhas-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.prenhas-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+  }
+
+  function dismissPrenhasNA(){
+    document.getElementById('prenhasNaTag').style.display = 'none';
+    document.getElementById('prenhasSimNaoWrap').style.display = 'block';
+  }
+
+  function restorePrenhasNA(){
+    document.getElementById('prenhasNaTag').style.display = 'flex';
+    document.getElementById('prenhasSimNaoWrap').style.display = 'none';
+    document.querySelectorAll('.prenhas-btn').forEach(b => b.classList.remove('selected'));
   }
 
   function setupTotaisRebanho(){
@@ -1519,6 +1523,8 @@
   }
 
   // ===================== SEÇÃO 3: SANIDADE ANIMAL =====================
+  const SINTOMAS_LISTA = ['Apático','Bicheira','Diarreia','Mancando','Coriza / Tosse','Outro'];
+
   let tratamentoCount = 0;
   function addTratamento(){
     tratamentoCount++;
@@ -1534,8 +1540,32 @@
       </div>
       <div class="trat-fields">
         <div class="item-title">🩺 Tratamento <span class="trat-num"></span></div>
-        <div class="field"><label>Identificação do Animal</label><input type="text" class="trat-animal" placeholder="n° brinco ou quantidade de animais"></div>
-        <div class="field"><label>Problema / Sintoma</label><input type="text" class="trat-problema" placeholder="Ex: Ferida na pata"></div>
+        <div class="field">
+          <label>Categoria Animal</label>
+          <p class="hint">Toque e segure (ou deslize) para selecionar mais de uma.</p>
+          <select class="trat-categoria pasto-select-multi" multiple size="4">
+            ${(CATEGORIAS_ANIMAL[currentFazenda] || []).map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+          <div class="multi-preview trat-categoria-preview">Nenhuma selecionada</div>
+        </div>
+        <div class="half-fields">
+          <div class="half-field field" style="margin-bottom:0;">
+            <label>Qtd Animais</label>
+            <input type="number" min="1" inputmode="numeric" class="trat-qtd" value="1">
+          </div>
+          <div class="half-field field" style="margin-bottom:0;">
+            <label>Id do Animal <span style="font-weight:normal;font-size:12px;color:#aaa;">(opcional)</span></label>
+            <input type="text" class="trat-animal" placeholder="n° brinco">
+          </div>
+        </div>
+        <div class="field">
+          <label>Sintomas</label>
+          <p class="hint">Toque e segure (ou deslize) para selecionar mais de um.</p>
+          <select class="trat-sintomas pasto-select-multi" multiple size="4">
+            ${SINTOMAS_LISTA.map(s => `<option value="${s}">${s}</option>`).join('')}
+          </select>
+          <div class="multi-preview trat-sintomas-preview">Nenhum selecionado</div>
+        </div>
         <div class="field"><label>Tratamento Aplicado</label><input type="text" class="trat-aplicado" placeholder="Ex: Pomada cicatrizante"></div>
         <div class="field"><label>Responsável</label><select class="trat-responsavel"></select></div>
         <button type="button" class="btn-confirmar">✔ Confirmar Tratamento</button>
@@ -1544,20 +1574,28 @@
     document.getElementById('tratamentosList').appendChild(div);
     renumberTratamentos();
     populateTratResponsavel(div.querySelector('.trat-responsavel'));
+    atualizarNenhum('tratamentosList','nenhumTratamentoWrap','nenhumTratamento');
+
+    div.querySelector('.trat-categoria').addEventListener('change', function(){
+      const nomes = Array.from(this.selectedOptions).map(o => o.value);
+      div.querySelector('.trat-categoria-preview').textContent = nomes.length ? nomes.join(', ') : 'Nenhuma selecionada';
+    });
+    div.querySelector('.trat-sintomas').addEventListener('change', function(){
+      const nomes = Array.from(this.selectedOptions).map(o => o.value);
+      div.querySelector('.trat-sintomas-preview').textContent = nomes.length ? nomes.join(', ') : 'Nenhum selecionado';
+    });
 
     div.querySelector('.btn-confirmar').addEventListener('click', () => {
-      const campos = [
-        {el: div.querySelector('.trat-animal'),     label: 'Identificação do Animal'},
-        {el: div.querySelector('.trat-problema'),   label: 'Problema / Sintoma'},
-        {el: div.querySelector('.trat-aplicado'),   label: 'Tratamento Aplicado'},
-        {el: div.querySelector('.trat-responsavel'), label: 'Responsável'}
-      ];
-      const vazio = campos.find(c => !c.el.value.trim());
-      if(vazio){
-        alert(`⚠️ Preencha o campo "${vazio.label}" antes de confirmar.`);
-        highlightField(vazio.el);
-        return;
-      }
+      const categoria = Array.from(div.querySelector('.trat-categoria').selectedOptions).map(o => o.value);
+      const qtd = div.querySelector('.trat-qtd').value;
+      const sintomas = Array.from(div.querySelector('.trat-sintomas').selectedOptions).map(o => o.value);
+      const aplicado = div.querySelector('.trat-aplicado').value.trim();
+      const responsavel = div.querySelector('.trat-responsavel').value;
+      if(!categoria.length){ alert('⚠️ Selecione ao menos uma Categoria Animal.'); highlightField(div.querySelector('.trat-categoria-btn')); return; }
+      if(!qtd || Number(qtd) < 1){ alert('⚠️ Informe a Quantidade de Animais.'); highlightField(div.querySelector('.trat-qtd')); return; }
+      if(!sintomas.length){ alert('⚠️ Selecione ao menos um Sintoma.'); highlightField(div.querySelector('.trat-sintoma-btn')); return; }
+      if(!aplicado){ alert('⚠️ Preencha o Tratamento Aplicado.'); highlightField(div.querySelector('.trat-aplicado')); return; }
+      if(!responsavel){ alert('⚠️ Selecione o Responsável.'); highlightField(div.querySelector('.trat-responsavel')); return; }
       div.classList.add('collapsed');
       document.getElementById('btnAddTratamento').disabled = false;
     });
@@ -1649,6 +1687,7 @@
     `;
     document.getElementById('vacinasList').appendChild(div);
     renumberVacinas();
+    atualizarNenhum('vacinasList','nenhumVacinaWrap','nenhumVacina');
 
     const checarConclusao = () => {
       const produto = div.querySelector('.vac-produto').value.trim();
@@ -1762,6 +1801,7 @@
     `;
     document.getElementById('misturasList').appendChild(div);
     renumberMisturas();
+    atualizarNenhum('misturasList','nenhumMisturaWrap','nenhumMistura');
 
     const concluirBtn = div.querySelector('.mix-concluir-btn');
 
@@ -1810,6 +1850,14 @@
   const LIMPEZA_PASTO_TIPOS = ['Motofoice','Herbicida','Trator'];
   const TIPOS_COM_PASTO = ['Pasto','Bebedouro','Cocho','Cerca','Estrada'];
   let manutencaoCount = 0;
+
+  function atualizarNenhum(listId, wrapId, checkId){
+    const temCard = document.querySelectorAll('#' + listId + ' .item-card').length > 0;
+    const wrap = document.getElementById(wrapId);
+    if(!wrap) return;
+    wrap.style.display = temCard ? 'none' : 'flex';
+    if(temCard) document.getElementById(checkId).checked = false;
+  }
 
   function atualizarNenhumServico(){
     const temCard = document.querySelectorAll('#manutencoesList .item-card').length > 0;
@@ -2081,7 +2129,7 @@
         </div>
         <div class="field">
           <label>Descrição</label>
-          <input type="text" class="prod-desc" placeholder="Selecione o tipo primeiro">
+          <textarea class="prod-desc" placeholder="Selecione o tipo primeiro" rows="3" style="resize:none;"></textarea>
         </div>
         <div class="field">
           <label>Quantidade</label>
@@ -2101,6 +2149,7 @@
     `;
     document.getElementById('produtosList').appendChild(div);
     renumberProdutos();
+    atualizarNenhum('produtosList','nenhumSolicitacaoWrap','nenhumSolicitacao');
 
     const checarConclusao = () => {
       if(!isProdutoCompleto(div)) return;
@@ -2166,32 +2215,30 @@
     btn.classList.add('selected');
   }
 
-  // ===================== SEÇÃO 9: ENTRADA/SAÍDA DE PRODUTOS =====================
+  // ===================== SEÇÃO 9: CHEGADA E SAÍDA DE PRODUTOS =====================
   let movimentoCount = 0;
-  function addMovimento(){
+  function addMovimento(tipo){
     movimentoCount++;
     const n = movimentoCount;
     const id = 'mov' + n;
     const div = document.createElement('div');
     div.className = 'item-card';
     div.id = id;
+    div.dataset.tipo = tipo;
+    const isChegada = tipo === 'Chegada';
+    const tipoIcon = isChegada ? '📥' : '📤';
+    const localLabel = isChegada ? 'De onde veio' : 'Para onde foi';
+    const localPlaceholder = isChegada ? 'Ex: Loja Agropecuária Central' : 'Ex: Fazenda Pedra Bonita';
     div.innerHTML = `
       <button type="button" class="remove-btn" onclick="removeItem('${id}')">✕</button>
       <div class="trat-collapsed-btn" onclick="reabrirMovimento('${id}')">
-        <span>✅ Movimentação <span class="mov-num"></span></span><span class="trat-edit-hint">✏️ Toque para editar</span>
+        <span>${tipoIcon} ${tipo} <span class="mov-num"></span></span><span class="trat-edit-hint">✏️ Toque para editar</span>
       </div>
       <div class="trat-fields">
-        <div class="item-title">🔄 Movimentação <span class="mov-num"></span></div>
-        <div class="field mov-tipo-group">
-          <label>Tipo</label>
-          <div class="btn-group">
-            <button type="button" class="choice-btn mov-tipo-btn" data-value="Entrada" onclick="selectTipoMovimento(this)">📥 Entrada</button>
-            <button type="button" class="choice-btn mov-tipo-btn" data-value="Saída" onclick="selectTipoMovimento(this)">📤 Saída</button>
-          </div>
-        </div>
-        <div class="field mov-local-wrap" style="display:none;">
-          <label class="mov-local-label">De onde veio / Para onde foi</label>
-          <input type="text" class="mov-local" placeholder="">
+        <div class="item-title">${tipoIcon} ${tipo} <span class="mov-num"></span></div>
+        <div class="field">
+          <label>${localLabel}</label>
+          <input type="text" class="mov-local" placeholder="${localPlaceholder}">
         </div>
         <div class="field" style="margin-bottom:0;">
           <label>Produtos e quantidades</label>
@@ -2203,42 +2250,31 @@
     `;
     document.getElementById('movimentosList').appendChild(div);
     renumberMovimentos();
+    atualizarNenhum('movimentosList','nenhumMovimentoWrap','nenhumMovimento');
 
     div.querySelector('.btn-confirmar').addEventListener('click', () => {
-      const tipoBtn = div.querySelector('.mov-tipo-btn.selected');
-      if(!tipoBtn){
-        alert('⚠️ Selecione o Tipo (Entrada ou Saída) antes de confirmar.');
-        highlightField(div.querySelector('.mov-tipo-group'));
+      const local = div.querySelector('.mov-local');
+      const produtos = div.querySelector('.mov-produtos');
+      if(!local.value.trim()){
+        alert(`⚠️ Preencha o campo "${localLabel}" antes de confirmar.`);
+        highlightField(local);
         return;
       }
-      const campos = [
-        {el: div.querySelector('.mov-local'),    label: tipoBtn.dataset.value === 'Saída' ? 'Para onde foi' : 'De onde veio'},
-        {el: div.querySelector('.mov-produtos'), label: 'Produtos e quantidades'}
-      ];
-      const vazio = campos.find(c => !c.el.value.trim());
-      if(vazio){
-        alert(`⚠️ Preencha o campo "${vazio.label}" antes de confirmar.`);
-        highlightField(vazio.el);
+      if(!produtos.value.trim()){
+        alert('⚠️ Preencha os produtos e quantidades.');
+        highlightField(produtos);
         return;
       }
       div.classList.add('collapsed');
-      document.getElementById('btnAddMovimento').disabled = false;
+      document.getElementById('btnAddChegada').disabled = false;
+      document.getElementById('btnAddSaida').disabled = false;
     });
 
-    document.getElementById('btnAddMovimento').disabled = true;
-  }
-
-  function selectTipoMovimento(btn){
-    selectChoice(btn);
-    const card = btn.closest('.item-card');
-    const isEntrada = btn.dataset.value === 'Entrada';
-    card.querySelector('.mov-local-wrap').style.display = 'block';
-    card.querySelector('.mov-local-label').textContent = isEntrada ? 'De onde veio' : 'Para onde foi';
-    card.querySelector('.mov-local').placeholder = isEntrada ? 'Ex: Loja Agropecuária Central' : 'Ex: Fazenda Pedra Bonita';
+    document.getElementById('btnAddChegada').disabled = true;
+    document.getElementById('btnAddSaida').disabled = true;
   }
 
   function isMovimentoCompleto(div){
-    if(!div.querySelector('.mov-tipo-btn.selected')) return false;
     if(!div.querySelector('.mov-local').value.trim()) return false;
     if(!div.querySelector('.mov-produtos').value.trim()) return false;
     return true;
@@ -2246,7 +2282,8 @@
 
   function reabrirMovimento(id){
     document.getElementById(id).classList.remove('collapsed');
-    document.getElementById('btnAddMovimento').disabled = true;
+    document.getElementById('btnAddChegada').disabled = true;
+    document.getElementById('btnAddSaida').disabled = true;
   }
 
   function renumberMovimentos(){
@@ -2265,16 +2302,19 @@
       renumberTratamentos();
       const aberto = document.querySelector('#tratamentosList .item-card:not(.collapsed)');
       document.getElementById('btnAddTratamento').disabled = !!aberto;
+      atualizarNenhum('tratamentosList','nenhumTratamentoWrap','nenhumTratamento');
     }
     if(parentId === 'vacinasList'){
       renumberVacinas();
       const aberto = document.querySelector('#vacinasList .item-card:not(.collapsed)');
       document.getElementById('btnAddVacina').disabled = !!aberto;
+      atualizarNenhum('vacinasList','nenhumVacinaWrap','nenhumVacina');
     }
     if(parentId === 'misturasList'){
       renumberMisturas();
       const aberto = document.querySelector('#misturasList .item-card:not(.collapsed)');
       document.getElementById('btnAddMistura').disabled = !!aberto;
+      atualizarNenhum('misturasList','nenhumMisturaWrap','nenhumMistura');
     }
     if(parentId === 'manutencoesList'){
       renumberManutencoes();
@@ -2286,11 +2326,14 @@
       renumberProdutos();
       const aberto = document.querySelector('#produtosList .item-card:not(.collapsed)');
       document.getElementById('btnAddProduto').disabled = !!aberto;
+      atualizarNenhum('produtosList','nenhumSolicitacaoWrap','nenhumSolicitacao');
     }
     if(parentId === 'movimentosList'){
       renumberMovimentos();
       const aberto = document.querySelector('#movimentosList .item-card:not(.collapsed)');
-      document.getElementById('btnAddMovimento').disabled = !!aberto;
+      document.getElementById('btnAddChegada').disabled = !!aberto;
+      document.getElementById('btnAddSaida').disabled = !!aberto;
+      atualizarNenhum('movimentosList','nenhumMovimentoWrap','nenhumMovimento');
     }
   }
 
@@ -2334,39 +2377,45 @@
       r += `Faltaram: ${qtdFaltou}\n`;
       r += `Pasto(s) com diferença: ${pastosDiv.length ? pastosDiv.join(', ') : 'Não informado'}\n`;
     }
+    const prenhasNa = document.getElementById('prenhasNaTag').style.display !== 'none';
+    const prenhasBtn = document.querySelector('.prenhas-btn.selected');
+    const prenhasLabel = {sim:'Sim, conferiu', nao:'Não conferiu'};
+    if(!prenhasNa)
+      r += `Vacas prenhas: ${prenhasBtn ? prenhasLabel[prenhasBtn.dataset.value] : 'Não informado'}\n`;
     const obsRebanho = document.getElementById('obsRebanho').value;
     if(obsRebanho) r += `Observações: ${obsRebanho}\n`;
     r += `\n`;
     dados.conferenciaRebanho = {
       conferiu: conferiuBtn ? conferiuBtn.dataset.value : null,
       totalEsperado, totalEncontrado, qtdFaltou, pastosDivergentes: pastosDiv,
+      vacasPrenhas: prenhasNa ? 'na' : (prenhasBtn ? prenhasBtn.dataset.value : null),
       observacoes: obsRebanho
     };
 
     // Seção 3 - Sanidade Animal
     r += `🩺 SANIDADE ANIMAL\n`;
-    const tratSim = document.querySelector('.binary-btn[data-group="trat"][data-value="sim"].selected');
     const tratamentos = [];
-    if(tratSim){
+    if(document.querySelectorAll('#tratamentosList .item-card').length > 0){
       document.querySelectorAll('#tratamentosList .item-card').forEach(card => {
+        const categorias = Array.from(card.querySelector('.trat-categoria').selectedOptions).map(o => o.value);
+        const qtd = card.querySelector('.trat-qtd').value;
         const animal = card.querySelector('.trat-animal').value;
-        const problema = card.querySelector('.trat-problema').value;
+        const sintomas = Array.from(card.querySelector('.trat-sintomas').selectedOptions).map(o => o.value);
         const aplicado = card.querySelector('.trat-aplicado').value;
         const responsavelTrat = card.querySelector('.trat-responsavel').value;
-        r += `- Animal: ${animal || '-'} | Problema: ${problema || '-'} | Tratamento: ${aplicado || '-'} | Responsável: ${responsavelTrat || '-'}\n`;
-        tratamentos.push({ animal, problema, tratamentoAplicado: aplicado, responsavel: responsavelTrat });
+        r += `- Categoria: ${categorias.join(', ') || '-'} | Qtd: ${qtd || '1'}${animal ? ' | Id: ' + animal : ''} | Sintomas: ${sintomas.join(', ') || '-'} | Tratamento: ${aplicado || '-'} | Responsável: ${responsavelTrat || '-'}\n`;
+        tratamentos.push({ categorias, qtdAnimais: qtd, idAnimal: animal, sintomas, tratamentoAplicado: aplicado, responsavel: responsavelTrat });
       });
     } else {
       r += `Nenhum animal doente ou medicado hoje.\n`;
     }
     r += `\n`;
-    dados.sanidadeAnimal = { houveTratamento: !!tratSim, tratamentos };
+    dados.sanidadeAnimal = { houveTratamento: tratamentos.length > 0, tratamentos };
 
     // Seção 4 - Vacinas e Vermífugos
-    r += `💉 VACINAS E VERMÍFUGOS\n`;
-    const vacSim = document.querySelector('.binary-btn[data-group="vac"][data-value="sim"].selected');
+    r += `💉 VACINAS, VERMÍFUGOS E CARRAPATICIDAS\n`;
     const vacinas = [];
-    if(vacSim){
+    if(document.querySelectorAll('#vacinasList .item-card').length > 0){
       document.querySelectorAll('#vacinasList .item-card').forEach(card => {
         const tipo = card.querySelector('.vac-tipo').value;
         const produto = card.querySelector('.vac-produto').value;
@@ -2381,7 +2430,7 @@
       r += `Nenhuma aplicação de vacina/vermífugo hoje.\n`;
     }
     r += `\n`;
-    dados.vacinasVermifugos = { houveAplicacao: !!vacSim, itens: vacinas };
+    dados.vacinasVermifugos = { houveAplicacao: vacinas.length > 0, itens: vacinas };
 
     // Seção 5 - Atividades no Curral
     r += `🐂 ATIVIDADES NO CURRAL\n`;
@@ -2409,9 +2458,8 @@
 
     // Seção 6 - Nutrição e Misturas
     r += `🌾 NUTRIÇÃO E MISTURAS\n`;
-    const mixSim = document.querySelector('.binary-btn[data-group="mistura"][data-value="sim"].selected');
     const misturas = [];
-    if(mixSim){
+    if(document.querySelectorAll('#misturasList .item-card').length > 0){
       document.querySelectorAll('#misturasList .item-card').forEach((card, i) => {
         const campos = (MIX_CAMPOS[currentFazenda] || []).map(c => ({
           label: c.nome,
@@ -2427,7 +2475,7 @@
       r += `Nenhuma mistura feita hoje.\n`;
     }
     r += `\n`;
-    dados.nutricaoMisturas = { houveMistura: !!mixSim, misturas };
+    dados.nutricaoMisturas = { houveMistura: misturas.length > 0, misturas };
 
     // Seção 7 - Serviços
     r += `🔧 SERVIÇOS\n`;
@@ -2471,9 +2519,8 @@
 
     // Seção 8 - Solicitações de Produtos
     r += `📦 SOLICITAÇÕES DE PRODUTOS\n`;
-    const solicSim = document.querySelector('.binary-btn[data-group="solic"][data-value="sim"].selected');
     const solicitacoes = [];
-    if(solicSim){
+    if(document.querySelectorAll('#produtosList .item-card').length > 0){
       const cards = document.querySelectorAll('#produtosList .item-card');
       let temProduto = false;
       cards.forEach((card, i) => {
@@ -2496,27 +2543,26 @@
       r += `Nenhuma solicitação hoje.\n`;
     }
     r += `\n`;
-    dados.solicitacoesProdutos = { houveSolicitacao: !!solicSim, itens: solicitacoes };
+    dados.solicitacoesProdutos = { houveSolicitacao: solicitacoes.length > 0, itens: solicitacoes };
 
-    // Seção 9 - Entrada/Saída de Produtos
-    r += `🔄 ENTRADA/SAÍDA DE PRODUTOS\n`;
-    const movSim = document.querySelector('.binary-btn[data-group="movimento"][data-value="sim"].selected');
+    // Seção 9 - Chegada e Saída de Produtos
+    r += `🔄 CHEGADA E SAÍDA DE PRODUTOS\n`;
     const movimentos = [];
-    if(movSim){
-      document.querySelectorAll('#movimentosList .item-card').forEach((card, i) => {
-        const tipoBtn = card.querySelector('.mov-tipo-btn.selected');
-        const tipo = tipoBtn ? tipoBtn.dataset.value : '-';
+    const movCardsResumo = document.querySelectorAll('#movimentosList .item-card');
+    if(movCardsResumo.length > 0){
+      movCardsResumo.forEach((card) => {
+        const tipo = card.dataset.tipo || '-';
         const local = card.querySelector('.mov-local').value || '-';
         const produtos = card.querySelector('.mov-produtos').value || '-';
-        const localLabel = tipoBtn && tipoBtn.dataset.value === 'Saída' ? 'Para onde foi' : 'De onde veio';
+        const localLabel = tipo === 'Saída' ? 'Para onde foi' : 'De onde veio';
         r += `- ${tipo} | ${localLabel}: ${local}\n  ${produtos.split('\n').join('\n  ')}\n`;
         movimentos.push({ tipo, local, produtos });
       });
     } else {
-      r += `Nenhuma entrada ou saída de produtos hoje.\n`;
+      r += `Nenhuma chegada ou saída de produtos hoje.\n`;
     }
     r += `\n`;
-    dados.movimentosProdutos = { houveMovimento: !!movSim, itens: movimentos };
+    dados.movimentosProdutos = { houveMovimento: movimentos.length > 0, itens: movimentos };
 
     // Seção 10 - Fechamento
     r += `✅ FECHAMENTO\n`;

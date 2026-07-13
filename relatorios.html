@@ -483,12 +483,17 @@
     // Sanidade
     const trat = (d.sanidadeAnimal || {}).tratamentos || [];
     cards.push(criarCard('🩺','Sanidade Animal', trat.length ?
-      trat.map(t => `<div class="list-item">🐂 ${t.animal || '-'} — ${t.problema || '-'} <span class="muted">(${t.tratamentoAplicado || '-'})</span></div>`).join('') :
+      trat.map(t => {
+        const cats = (t.categorias||[]).join(', ') || '-';
+        const sins = (t.sintomas||[]).join(', ') || '-';
+        const id = t.idAnimal ? ` | Id: ${t.idAnimal}` : '';
+        return `<div class="list-item">🐂 ${cats} (${t.qtdAnimais||1} animal${(t.qtdAnimais||1)!=1?'is':''})${id}<br><span class="muted">Sintomas: ${sins} — ${t.tratamentoAplicado||'-'} (${t.responsavel||'-'})</span></div>`;
+      }).join('') :
       '<div class="empty-hint">Nenhum animal tratado hoje.</div>'));
 
     // Vacinas
     const vac = (d.vacinasVermifugos || {}).itens || [];
-    cards.push(criarCard('💉','Vacinas e Vermífugos', vac.length ?
+    cards.push(criarCard('💉','Vacinas, Vermífugos e Carrapaticidas', vac.length ?
       vac.map(v => `<div class="list-item">${v.tipo}: ${v.produto || '-'} <span class="muted">(${v.qtdAnimais || 0} animais${v.dose ? ' — Dose: ' + v.dose + ' ' + (v.doseUnidade||'') : ''})</span></div>`).join('') :
       '<div class="empty-hint">Nenhuma aplicação hoje.</div>'));
 
@@ -531,7 +536,7 @@
 
     // Entrada / Saída de Produtos
     const movimentos = (d.movimentosProdutos || {}).itens || [];
-    cards.push(criarCard('🔄','Entrada / Saída de Produtos', movimentos.length ?
+    cards.push(criarCard('🔄','Chegada e Saída de Produtos', movimentos.length ?
       movimentos.map(m => {
         const localLabel = m.tipo === 'Saída' ? 'Para onde foi' : 'De onde veio';
         return `<div class="list-item"><span class="badge ${m.tipo === 'Saída' ? 'badge-danger' : 'badge-on'}">${m.tipo || '-'}</span> ${localLabel}: ${m.local || '-'}<div class="muted" style="margin-top:4px;">${(m.produtos||'').replace(/\n/g,'<br>')}</div></div>`;

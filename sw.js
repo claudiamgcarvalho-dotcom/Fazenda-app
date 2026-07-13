@@ -1,4 +1,4 @@
-const CACHE_NAME = 'boivirtual-v2';
+const CACHE_NAME = 'boivirtual-v3';
 const SHELL = [
   '/Fazenda-app/',
   '/Fazenda-app/index.html',
