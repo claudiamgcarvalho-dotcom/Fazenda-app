@@ -35,6 +35,10 @@ var DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 
 var ESTOQUE_SPREADSHEET_ID = '1uwVG9sbCZNUFFzU84BwUu7MHXlWK-7yBjqJEOWk-JJw';
 var ESTOQUE_HEADERS = ['Timestamp', 'Data', 'Fazenda', 'Produto', 'Tipo', 'QtdSacos', 'QtdKg', 'Observacoes'];
 
+var SAUDE_ANIMAL_SPREADSHEET_ID = '1u58XdIQaR9ht87A8ngMDXEXAVbC8yXnEUZ_PHLb1iaU';
+var VACINAS_HEADERS     = ['Timestamp', 'Data', 'Fazenda', 'Categoria Animal', 'Qtd Animais', 'Nome', 'Tipo', 'Dose', 'Observações'];
+var MEDICAMENTOS_HEADERS = ['Timestamp', 'Data', 'Fazenda', 'Categoria Animal', 'Qtd Animais', 'Sintomas', 'Medicamento', 'Observações'];
+
 function doPost(e) {
   var raw = (e && e.postData && e.postData.contents) || '';
   var dados = {};
@@ -70,6 +74,8 @@ function doPost(e) {
   registrarSolicitacoes(dados, fazenda);
   registrarHoras(dados, fazenda);
   registrarConsumo(dados, fazenda);
+  registrarVacinas(dados, fazenda);
+  registrarMedicamentos(dados, fazenda);
 
   return ContentService.createTextOutput(JSON.stringify({ ok: true, id: id }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -482,6 +488,65 @@ function formatarData(valor) {
 function jsonOutput(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Grava vacinas/vermifugos/carrapaticidas do dia na aba DadosVacinas da
+// planilha Saude Animal. Apaga e regrava para evitar duplicidade em
+// múltiplos envios no mesmo dia (só o último prevalece).
+function registrarVacinas(dados, fazenda) {
+  var itens = (dados.vacinasVermifugos || {}).itens || [];
+  if (!dados.data) return;
+  try {
+    var ss  = SpreadsheetApp.openById(SAUDE_ANIMAL_SPREADSHEET_ID);
+    var aba = getOrCreateAbaSaudeAnimal(ss, 'DadosVacinas', VACINAS_HEADERS);
+    removerSaudeAnimalDoDia(aba, dados.data, fazenda);
+    if (!itens.length) return;
+    var p = String(dados.data).split('-');
+    var dataDate = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    itens.forEach(function (item) {
+      var dose = item.dose ? (item.dose + (item.doseUnidade ? ' ' + item.doseUnidade : '')) : '';
+      aba.appendRow([new Date(), dataDate, fazenda, item.categoria || '', item.qtdAnimais || '', item.produto || '', item.tipo || '', dose, '']);
+    });
+  } catch (err) {}
+}
+
+// Grava tratamentos com medicamentos do dia na aba DadosMedicamentos.
+// Mesmo padrão: apaga e regrava para evitar duplicidade.
+function registrarMedicamentos(dados, fazenda) {
+  var tratamentos = (dados.sanidadeAnimal || {}).tratamentos || [];
+  if (!dados.data) return;
+  try {
+    var ss  = SpreadsheetApp.openById(SAUDE_ANIMAL_SPREADSHEET_ID);
+    var aba = getOrCreateAbaSaudeAnimal(ss, 'DadosMedicamentos', MEDICAMENTOS_HEADERS);
+    removerSaudeAnimalDoDia(aba, dados.data, fazenda);
+    if (!tratamentos.length) return;
+    var p = String(dados.data).split('-');
+    var dataDate = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    tratamentos.forEach(function (t) {
+      var categorias = (t.categorias || []).join(', ');
+      var sintomas   = (t.sintomas   || []).join(', ');
+      var obs = t.idAnimal ? 'Id: ' + t.idAnimal : '';
+      if (t.responsavel) obs = obs ? obs + ' | Resp: ' + t.responsavel : 'Resp: ' + t.responsavel;
+      aba.appendRow([new Date(), dataDate, fazenda, categorias, t.qtdAnimais || '', sintomas, t.tratamentoAplicado || '', obs]);
+    });
+  } catch (err) {}
+}
+
+function getOrCreateAbaSaudeAnimal(ss, nomeAba, headers) {
+  var aba = ss.getSheetByName(nomeAba);
+  if (!aba) aba = ss.insertSheet(nomeAba);
+  if (aba.getLastRow() === 0) aba.appendRow(headers);
+  return aba;
+}
+
+// Remove linhas de uma data+fazenda específica (cols B e C, índices 1 e 2).
+function removerSaudeAnimalDoDia(aba, dataISO, fazenda) {
+  var linhas = aba.getDataRange().getValues();
+  for (var i = linhas.length - 1; i >= 1; i--) {
+    if (formatarData(linhas[i][1]) === dataISO && String(linhas[i][2]) === fazenda) {
+      aba.deleteRow(i + 1);
+    }
+  }
 }
 
 function getOrCreateSheet(fazenda) {
