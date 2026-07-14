@@ -1628,6 +1628,9 @@
     if(tipo === 'Vermífugo'){
       return `<input type="text" class="vac-produto" placeholder="Ex: Ivermectina">`;
     }
+    if(tipo === 'Carrapaticida'){
+      return `<input type="text" class="vac-produto" placeholder="Ex: Colosso, Butox">`;
+    }
     return `<select class="vac-produto">
       <option value="">— selecione —</option>
       ${(VACINA_PRODUTOS[currentFazenda] || []).map(p => `<option value="${p}">${p}</option>`).join('')}
@@ -1652,6 +1655,7 @@
           <select class="vac-tipo">
             <option value="Vacina">Vacina</option>
             <option value="Vermífugo">Vermífugo</option>
+            <option value="Carrapaticida">Carrapaticida</option>
           </select>
         </div>
         <div class="field vac-produto-wrap">
