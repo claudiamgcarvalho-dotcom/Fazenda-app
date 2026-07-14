@@ -37,7 +37,7 @@ var ESTOQUE_HEADERS = ['Timestamp', 'Data', 'Fazenda', 'Produto', 'Tipo', 'QtdSa
 
 var SAUDE_ANIMAL_SPREADSHEET_ID = '1u58XdIQaR9ht87A8ngMDXEXAVbC8yXnEUZ_PHLb1iaU';
 var VACINAS_HEADERS     = ['Timestamp', 'Data', 'Fazenda', 'Categoria Animal', 'Qtd Animais', 'Nome', 'Tipo', 'Dose', 'Observações'];
-var MEDICAMENTOS_HEADERS = ['Timestamp', 'Data', 'Fazenda', 'Categoria Animal', 'Qtd Animais', 'Sintomas', 'Medicamento', 'Observações'];
+var MEDICAMENTOS_HEADERS = ['Timestamp', 'Data', 'Fazenda', 'Categoria Animal', 'Qtd Animais', 'ID Animal', 'Sintomas', 'Medicamento', 'Observações'];
 
 function doPost(e) {
   var raw = (e && e.postData && e.postData.contents) || '';
@@ -525,9 +525,8 @@ function registrarMedicamentos(dados, fazenda) {
     tratamentos.forEach(function (t) {
       var categorias = (t.categorias || []).join(', ');
       var sintomas   = (t.sintomas   || []).join(', ');
-      var obs = t.idAnimal ? 'Id: ' + t.idAnimal : '';
-      if (t.responsavel) obs = obs ? obs + ' | Resp: ' + t.responsavel : 'Resp: ' + t.responsavel;
-      aba.appendRow([new Date(), dataDate, fazenda, categorias, t.qtdAnimais || '', sintomas, t.tratamentoAplicado || '', obs]);
+      var obs = t.responsavel ? 'Resp: ' + t.responsavel : '';
+      aba.appendRow([new Date(), dataDate, fazenda, categorias, t.qtdAnimais || '', t.idAnimal || '', sintomas, t.tratamentoAplicado || '', obs]);
     });
   } catch (err) {}
 }
