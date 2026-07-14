@@ -471,12 +471,17 @@
     const esperado = Number(reb.totalEsperado) || 0;
     const encontrado = Number(reb.totalEncontrado) || 0;
     const diff = esperado - encontrado;
+    const prenhasTexto = { sim: '✅ Sim, conferiu', nao: '❌ Não conferiu' };
+    const prenhasHtml = reb.vacasPrenhas && reb.vacasPrenhas !== 'na'
+      ? `<div class="list-item" style="margin-top:10px;">🐮 Vacas prenhas: ${prenhasTexto[reb.vacasPrenhas] || reb.vacasPrenhas}</div>`
+      : '';
     cards.push(criarCard('🐄','Conferência de Rebanho', `
       <div class="kpi-row">
         <div class="kpi"><div class="num">${esperado}</div><div class="label">Esperado</div></div>
         <div class="kpi"><div class="num">${encontrado}</div><div class="label">Encontrado</div></div>
       </div>
       ${diff !== 0 ? `<div class="alert-danger">⚠️ Faltam ${diff} animal(is)${(reb.pastosDivergentes||[]).length ? ' — Pasto(s): ' + reb.pastosDivergentes.join(', ') : ''}</div>` : ''}
+      ${prenhasHtml}
       ${reb.observacoes ? `<div class="muted" style="margin-top:10px;">Observações: ${reb.observacoes}</div>` : ''}
     `));
 
