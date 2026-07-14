@@ -499,7 +499,7 @@
     // Vacinas
     const vac = (d.vacinasVermifugos || {}).itens || [];
     cards.push(criarCard('💉','Vacinas, Vermífugos e Carrapaticidas', vac.length ?
-      vac.map(v => `<div class="list-item">${v.tipo}: ${v.produto || '-'} <span class="muted">(${v.qtdAnimais || 0} animais${v.dose ? ' — Dose: ' + v.dose + ' ' + (v.doseUnidade||'') : ''})</span></div>`).join('') :
+      vac.map(v => `<div class="list-item">${v.tipo}: ${v.produto || '-'} <span class="muted">(${v.qtdAnimais || 0} animais${v.categoria ? ' — ' + v.categoria : ''}${v.dose ? ' — Dose: ' + v.dose + ' ' + (v.doseUnidade||'') : ''})</span></div>`).join('') :
       '<div class="empty-hint">Nenhuma aplicação hoje.</div>'));
 
     // Curral
@@ -536,7 +536,7 @@
     // Solicitações de Produtos
     const solicitacoes = (d.solicitacoesProdutos || {}).itens || [];
     cards.push(criarCard('📦','Solicitações de Produtos', solicitacoes.length ?
-      solicitacoes.map(s => `<div class="list-item">${s.descricao || s.tipo || '-'} <span class="muted">— Qtd: ${s.quantidade || '-'}</span> ${badgeUrgencia(s.urgencia)}${linkTrello(s.linkTrello)}</div>`).join('') :
+      solicitacoes.map(s => `<div class="list-item">${(s.descricao || s.tipo || '-').replace(/\n/g,'<br>')} <span class="muted">— Qtd: ${s.quantidade || '-'}</span> ${badgeUrgencia(s.urgencia)}${linkTrello(s.linkTrello)}</div>`).join('') :
       '<div class="empty-hint">Nenhuma solicitação hoje.</div>'));
 
     // Entrada / Saída de Produtos
