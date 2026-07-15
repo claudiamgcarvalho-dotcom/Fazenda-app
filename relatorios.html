@@ -786,7 +786,7 @@
     if(totalTrat > 0) window._medChartData = { diasNoMes, catPorDia, sinPorDia };
 
     const medHtml = totalTrat > 0
-      ? `<canvas id="chartMedDias" style="margin-top:10px;max-height:200px;"></canvas>`
+      ? `<canvas id="chartMedDias" style="margin-top:10px;"></canvas>`
       : '<div class="empty-hint" style="margin-top:8px;">Nenhum tratamento registrado no mês.</div>';
 
     return criarCard('🩺', 'Sanidade Animal', `
