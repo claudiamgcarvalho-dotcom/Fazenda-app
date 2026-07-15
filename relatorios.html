@@ -623,10 +623,11 @@
       });
     });
     const servicoRows = Object.values(servicoMap)
-      .map(v => ({ local: v.local, servico: v.servico, nDias: v.dias.size }))
+      .map(v => ({ local: String(v.local||''), servico: String(v.servico||''), nDias: v.dias.size }))
       .sort((a,b) => {
         if(!!a.local !== !!b.local) return a.local ? -1 : 1;
-        return (a.local||'').localeCompare(b.local||'') || a.servico.localeCompare(b.servico);
+        if(a.local < b.local) return -1; if(a.local > b.local) return 1;
+        return a.servico < b.servico ? -1 : a.servico > b.servico ? 1 : 0;
       });
     const tabelaHtml = servicoRows.length > 0 ? `
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
