@@ -134,6 +134,9 @@
   .servico-grupo-titulo{font-weight:700;color:#394A59;font-size:13.5px;margin-bottom:2px;}
   .servico-item{padding-left:10px;}
 
+  /* Semanal: coluna única, cards empilhados verticalmente */
+  .cards-grid.modo-semanal{grid-template-columns:1fr;}
+
   /* Espaçamento mais compacto, só no painel Diário (Semanal/Mensal ficam como estão) */
   .cards-grid.modo-diario .list-item{padding:4px 0;}
   .cards-grid.modo-diario .servico-grupo{margin-bottom:6px;}
@@ -382,6 +385,7 @@
     const grid = document.getElementById('cardsGrid');
     grid.innerHTML = '';
     grid.classList.toggle('modo-diario', state.periodo === 'diario');
+    grid.classList.toggle('modo-semanal', state.periodo === 'semanal');
 
     montarCabecalho(registros, inicio, fim);
 
