@@ -371,7 +371,7 @@
       }
       renderPainel(json.registros, inicio, fim, saudeAnimal);
     } catch (err) {
-      grid.innerHTML = '<div class="status-msg erro">⚠️ Erro: ' + String(err) + '</div>';
+      grid.innerHTML = '<div class="status-msg erro">⚠️ Não foi possível conectar à planilha. Verifique sua internet e tente de novo.</div>';
     }
   }
 
@@ -618,7 +618,7 @@
         const det = detalheServico(s);
         const servLabel = s.tipo + (det ? ` — ${det}` : '');
         const key = (s.local||'') + '||' + servLabel;
-        if(!servicoMap[key]) servicoMap[key] = { local: s.local||'', servico: servLabel, dias: new Set() };
+        if(!servicoMap[key]) servicoMap[key] = { local: String(s.local||''), servico: servLabel, dias: new Set() };
         servicoMap[key].dias.add(r.data);
       });
     });
