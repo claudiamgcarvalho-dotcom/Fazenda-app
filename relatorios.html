@@ -693,6 +693,48 @@
         });
         delete window._vacinasChartData;
       }
+      const mcd = window._medChartData;
+      if(mcd){
+        delete window._medChartData;
+        const { diasNoMes, catPorDia, sinPorDia, topCat, topSin } = mcd;
+        const ctxDias = document.getElementById('chartMedDias');
+        if(ctxDias){
+          chartInstances.medDias = new Chart(ctxDias, {
+            type: 'bar',
+            data: {
+              labels: diasNoMes.map(d => String(Number(d))),
+              datasets: [
+                { label: 'Categorias (ocorrências)', data: diasNoMes.map(d => catPorDia[d] || 0), backgroundColor: 'rgba(26,120,194,0.75)', borderColor: '#1A78C2', borderWidth: 1 },
+                { label: 'Sintomas (ocorrências)',   data: diasNoMes.map(d => sinPorDia[d] || 0), backgroundColor: 'rgba(104,138,126,0.75)', borderColor: '#688A7E', borderWidth: 1 }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } },
+              scales: {
+                x: { ticks: { font: { size: 9 } }, title: { display: true, text: 'Dia do mês', font: { size: 9 } } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } }, title: { display: true, text: 'Ocorrências', font: { size: 9 } } }
+              }
+            }
+          });
+        }
+        const ctxCat = document.getElementById('chartMedCat');
+        if(ctxCat && topCat.length){
+          chartInstances.medCat = new Chart(ctxCat, {
+            type: 'bar',
+            data: { labels: topCat.map(([k]) => k), datasets: [{ data: topCat.map(([,v]) => v), backgroundColor: '#1A78C2' }] },
+            options: { indexAxis:'y', responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => c.parsed.x + ' ocorrências' } } }, scales:{ x:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}}}, y:{ticks:{font:{size:9}}} } }
+          });
+        }
+        const ctxSin = document.getElementById('chartMedSin');
+        if(ctxSin && topSin.length){
+          chartInstances.medSin = new Chart(ctxSin, {
+            type: 'bar',
+            data: { labels: topSin.map(([k]) => k), datasets: [{ data: topSin.map(([,v]) => v), backgroundColor: '#688A7E' }] },
+            options: { indexAxis:'y', responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => c.parsed.x + ' ocorrências' } } }, scales:{ x:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}}}, y:{ticks:{font:{size:9}}} } }
+          });
+        }
+      }
     });
 
     return cards;
@@ -707,6 +749,8 @@
     const medicamentos = (saudeAnimal.medicamentos || []).filter(m =>
       m.Fazenda === fazenda && (m.Data || '').startsWith(mesISO)
     );
+
+    // --- VACINAS ---
     const porProduto = {};
     vacinas.forEach(v => {
       const nome = String(v.Nome || 'Sem nome').trim();
@@ -715,13 +759,46 @@
       if(!porProduto[nome]) porProduto[nome] = { nome, tipo, total: 0 };
       porProduto[nome].total += qtd;
     });
-    const produtos      = Object.values(porProduto);
-    const totalCabecas  = produtos.reduce((s, p) => s + p.total, 0);
-    const totalTrat     = medicamentos.length;
+    const produtos     = Object.values(porProduto);
+    const totalCabecas = produtos.reduce((s, p) => s + p.total, 0);
     window._vacinasChartData = produtos;
     const vacinasHtml = produtos.length > 0
       ? `<canvas id="chartVacinas" style="margin-top:10px;max-height:160px;"></canvas>`
       : '<div class="empty-hint" style="margin-top:8px;">Nenhuma aplicação registrada no mês.</div>';
+
+    // --- MEDICAMENTOS analytics ---
+    const totalTrat = medicamentos.length;
+    const catPorDia = {}, sinPorDia = {}, contCat = {}, contSin = {};
+    medicamentos.forEach(m => {
+      const dia = String(m.Data || '').substring(8, 10);
+      if(!dia) return;
+      const cats = String(m['Categoria Animal'] || '').split(',').map(c => c.trim()).filter(Boolean);
+      catPorDia[dia] = (catPorDia[dia] || 0) + cats.length;
+      cats.forEach(c => { contCat[c] = (contCat[c] || 0) + 1; });
+      const sins = String(m.Sintomas || '').split(',').map(s => s.trim()).filter(Boolean);
+      sinPorDia[dia] = (sinPorDia[dia] || 0) + sins.length;
+      sins.forEach(s => { contSin[s] = (contSin[s] || 0) + 1; });
+    });
+    const [ano, mes] = mesISO.split('-').map(Number);
+    const diasNoMes = Array.from({length: new Date(ano, mes, 0).getDate()}, (_, i) => String(i + 1).padStart(2, '0'));
+    const topCat = Object.entries(contCat).sort((a,b) => b[1]-a[1]).slice(0,5);
+    const topSin = Object.entries(contSin).sort((a,b) => b[1]-a[1]).slice(0,5);
+    if(totalTrat > 0) window._medChartData = { diasNoMes, catPorDia, sinPorDia, topCat, topSin };
+
+    const medHtml = totalTrat > 0 ? `
+      <canvas id="chartMedDias" style="margin-top:10px;max-height:180px;"></canvas>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:4px;">Categorias</div>
+          <canvas id="chartMedCat" style="max-height:110px;"></canvas>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:4px;">Sintomas</div>
+          <canvas id="chartMedSin" style="max-height:110px;"></canvas>
+        </div>
+      </div>
+    ` : '<div class="empty-hint" style="margin-top:8px;">Nenhum tratamento registrado no mês.</div>';
+
     return criarCard('🩺', 'Sanidade Animal', `
       <div style="margin-bottom:14px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:8px;">💉 Vacinas e Vermífugos</div>
@@ -737,6 +814,7 @@
         <div class="kpi-row">
           <div class="kpi"><div class="num">${totalTrat}</div><div class="label">Tratamentos</div></div>
         </div>
+        ${medHtml}
       </div>
     `);
   }
