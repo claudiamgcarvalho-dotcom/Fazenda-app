@@ -548,6 +548,35 @@ function removerSaudeAnimalDoDia(aba, dataISO, fazenda) {
   }
 }
 
+// Importação retroativa: lê todos os resumos diários da planilha principal
+// a partir de DATA_INICIO e regrava as seções 3 (medicamentos) e 4 (vacinas)
+// na planilha Saúde Animal. Execute manualmente uma única vez pelo menu
+// Extensões > Apps Script > Executar > importarSaudeAnimalHistorico.
+function importarSaudeAnimalHistorico() {
+  var DATA_INICIO = '2026-07-01';
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var abas = ss.getSheets();
+  var total = 0;
+
+  abas.forEach(function(aba) {
+    if (aba.getName() === FALLBACK_SHEET_NAME) return;
+    var linhas = aba.getDataRange().getValues();
+    for (var i = 1; i < linhas.length; i++) {
+      var dataStr = String(linhas[i][2]); // coluna C = Data (YYYY-MM-DD)
+      if (dataStr < DATA_INICIO) continue;
+      var jsonStr = String(linhas[i][6]); // coluna G = DadosJSON
+      var parsed;
+      try { parsed = JSON.parse(jsonStr); } catch(e) { continue; }
+      var fazenda = String(linhas[i][3]); // coluna D = Fazenda
+      registrarVacinas(parsed, fazenda);
+      registrarMedicamentos(parsed, fazenda);
+      total++;
+    }
+  });
+
+  Logger.log('Importação concluída: ' + total + ' resumo(s) processado(s).');
+}
+
 function getOrCreateSheet(fazenda) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var nomeAba = fazenda || FALLBACK_SHEET_NAME;
