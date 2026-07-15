@@ -350,7 +350,7 @@
 
     try {
       const promises = [fetch(url)];
-      if(state.periodo === 'mensal'){
+      if(state.periodo === 'mensal' || state.periodo === 'semanal'){
         promises.push(fetch(API_URL_SAUDE_ANIMAL + '?action=vacinas'));
         promises.push(fetch(API_URL_SAUDE_ANIMAL + '?action=medicamentos'));
       }
@@ -361,7 +361,7 @@
         return;
       }
       let saudeAnimal = null;
-      if(state.periodo === 'mensal'){
+      if(state.periodo === 'mensal' || state.periodo === 'semanal'){
         const jVac = await resps[1].json();
         const jMed = await resps[2].json();
         saudeAnimal = {
@@ -588,7 +588,7 @@
     if(state.periodo === 'mensal' && saudeAnimal){
       cardSaude = criarCardSaudeAnimal(saudeAnimal, inicio, fim);
     } else if(state.periodo === 'semanal'){
-      cardSaude = criarCardSaudeAnimalSemanal(registros, rebanhoLabels);
+      cardSaude = criarCardSaudeAnimalSemanal(registros, rebanhoLabels, saudeAnimal, inicio, fim);
     } else {
       cardSaude = criarCard('🩺','Sanidade e Vacinas', `
         <div class="kpi-row">
@@ -826,35 +826,52 @@
     `);
   }
 
-  function criarCardSaudeAnimalSemanal(registros, rebanhoLabels){
-    // Vacinas
-    const porProduto = {};
-    registros.forEach(r => {
-      ((r.dados.vacinasVermifugos || {}).itens || []).forEach(v => {
-        const nome = String(v.produto || 'Sem nome').trim();
-        const tipo = String(v.tipo || 'Vacina').trim();
-        const qtd  = Number(v.qtdAnimais || 0);
-        if(!porProduto[nome]) porProduto[nome] = { nome, tipo, total: 0 };
-        porProduto[nome].total += qtd;
-      });
-    });
-    const produtos       = Object.values(porProduto);
-    const totalAplicacoes = registros.reduce((s,r) => s + ((r.dados.vacinasVermifugos||{}).itens||[]).length, 0);
-    const totalCabecas   = produtos.reduce((s,p) => s + p.total, 0);
-    const maxProd        = produtos.reduce((m,p) => Math.max(m, p.total), 1);
+  function criarCardSaudeAnimalSemanal(registros, rebanhoLabels, saudeAnimal, inicio, fim){
+    const inicioISO = fmtISO(inicio);
+    const fimISO    = fmtISO(fim);
 
-    // Medicamentos
-    const contCat = {}, contSin = {};
-    const tratPorDia = registros.map(r => {
-      const trats = (r.dados.sanidadeAnimal || {}).tratamentos || [];
-      trats.forEach(t => {
-        const qtd = Number(t.qtdAnimais || 1);
-        (t.categorias || []).forEach(c => { contCat[c] = (contCat[c] || 0) + qtd; });
-        (t.sintomas   || []).forEach(s => { contSin[s] = (contSin[s] || 0) + qtd; });
-      });
-      return trats.length;
+    // Vacinas — da API Saúde Animal filtrada pelo período
+    const vacinasAPI = saudeAnimal ? (saudeAnimal.vacinas || []).filter(v =>
+      v.Fazenda === state.fazenda && (v.Data||'') >= inicioISO && (v.Data||'') <= fimISO
+    ) : [];
+    const porProduto = {};
+    vacinasAPI.forEach(v => {
+      const nome = String(v.Nome || 'Sem nome').trim();
+      const tipo = String(v.Tipo || 'Vacina').trim();
+      const qtd  = Number(v['Qtd Animais'] || 0);
+      if(!porProduto[nome]) porProduto[nome] = { nome, tipo, total: 0 };
+      porProduto[nome].total += qtd;
     });
-    const totalTrat = tratPorDia.reduce((a,b) => a+b, 0);
+    // Fallback: se API não disponível, usa registros
+    if(!vacinasAPI.length){
+      registros.forEach(r => {
+        ((r.dados.vacinasVermifugos || {}).itens || []).forEach(v => {
+          const nome = String(v.produto || 'Sem nome').trim();
+          const tipo = String(v.tipo || 'Vacina').trim();
+          const qtd  = Number(v.qtdAnimais || 0);
+          if(!porProduto[nome]) porProduto[nome] = { nome, tipo, total: 0 };
+          porProduto[nome].total += qtd;
+        });
+      });
+    }
+    const produtos        = Object.values(porProduto);
+    const totalAplicacoes = vacinasAPI.length || registros.reduce((s,r) => s + ((r.dados.vacinasVermifugos||{}).itens||[]).length, 0);
+    const totalCabecas    = produtos.reduce((s,p) => s + p.total, 0);
+    const maxProd         = produtos.reduce((m,p) => Math.max(m, p.total), 1);
+
+    // Medicamentos — contagem por dia vem dos registros; categorias/sintomas da API
+    const tratPorDia = registros.map(r => ((r.dados.sanidadeAnimal||{}).tratamentos||[]).length);
+    const totalTrat  = tratPorDia.reduce((a,b) => a+b, 0);
+
+    const medAPI = saudeAnimal ? (saudeAnimal.medicamentos || []).filter(m =>
+      m.Fazenda === state.fazenda && (m.Data||'') >= inicioISO && (m.Data||'') <= fimISO
+    ) : [];
+    const contCat = {}, contSin = {};
+    medAPI.forEach(m => {
+      const qtd = Number(m['Qtd Animais'] || 1);
+      String(m['Categoria Animal'] || '').split(',').map(c => c.trim()).filter(Boolean).forEach(c => { contCat[c] = (contCat[c]||0) + qtd; });
+      String(m.Sintomas || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => { contSin[s] = (contSin[s]||0) + qtd; });
+    });
     const topCat = Object.entries(contCat).sort((a,b) => b[1]-a[1]).slice(0,5);
     const topSin = Object.entries(contSin).sort((a,b) => b[1]-a[1]).slice(0,5);
     const maxCat = topCat[0] ? topCat[0][1] : 1;
