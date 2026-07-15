@@ -557,8 +557,136 @@
     return cards;
   }
 
-  // ===================== PAINEL SEMANAL / MENSAL =====================
+  // ===================== PAINEL SEMANAL =====================
+  function renderSemanal(registros, inicio, fim, saudeAnimal){
+    const cards = [];
+    const rebanhoLabels = registros.map(r => fmtBR(parseISO(r.data)));
+
+    // --- CARD 1: EVOLUÇÃO DE REBANHO ---
+    const diasTodo  = registros.filter(r => (r.dados.conferenciaRebanho||{}).conferiu === 'todo').length;
+    const diasParte = registros.filter(r => (r.dados.conferenciaRebanho||{}).conferiu === 'parte').length;
+    const somaEnc   = registros
+      .filter(r => (r.dados.conferenciaRebanho||{}).conferiu === 'todo')
+      .reduce((s,r) => s + Number((r.dados.conferenciaRebanho||{}).totalEncontrado || 0), 0);
+    const mediaAnimais = diasTodo > 0 ? Math.round(somaEnc / diasTodo) : '-';
+    let totalFaltou = 0;
+    registros.forEach(r => { totalFaltou += Number((r.dados.conferenciaRebanho||{}).qtdFaltou || 0); });
+    const diasCurral = registros.filter(r => (r.dados.atividadesCurral||{}).houveAtividade).length;
+    const atvsSet = new Set();
+    registros.forEach(r => ((r.dados.atividadesCurral||{}).atividades||[]).forEach(a => atvsSet.add(a)));
+    cards.push(criarCard('🐄', 'Evolução de Rebanho', `
+      <div class="kpi-row">
+        <div class="kpi"><div class="num">${diasTodo}</div><div class="label">Dias — gado todo</div></div>
+        <div class="kpi"><div class="num">${diasParte}</div><div class="label">Dias — parte do gado</div></div>
+        <div class="kpi"><div class="num">${mediaAnimais}</div><div class="label">Média animais/dia</div></div>
+      </div>
+      <div class="list-item" style="margin-top:8px;">
+        ${totalFaltou > 0 ? `⚠️ Faltaram <strong>${totalFaltou}</strong> cabeça(s) no período` : '✅ Nenhuma falta de cabeça no período'}
+      </div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:6px;">🐂 Curral</div>
+      <div class="list-item">Dias com atividade no curral: <strong>${diasCurral}</strong></div>
+      ${atvsSet.size > 0 ? `<div style="margin-top:6px;">${Array.from(atvsSet).map(a => `<span class="chip">${a}</span>`).join('')}</div>` : ''}
+      <hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:4px;">📋 Nascimentos / Mortes / Abortos</div>
+      <div class="empty-hint">Dados virão de outro relatório — em breve.</div>
+    `));
+
+    // --- CARD 2: SAÚDE ANIMAL ---
+    cards.push(criarCardSaudeAnimalSemanal(registros, rebanhoLabels, saudeAnimal, inicio, fim));
+
+    // --- CARD 3: NUTRIÇÃO ---
+    const totaisNutricao = {};
+    registros.forEach(r => ((r.dados.nutricaoMisturas||{}).misturas||[]).forEach(m =>
+      Object.entries(m).forEach(([k,v]) => totaisNutricao[k] = (totaisNutricao[k]||0) + Number(v))
+    ));
+    const nutId = 'chart-nut-sem';
+    const temNutricao = Object.keys(totaisNutricao).length > 0;
+    if(temNutricao) window._nutSemData = { id: nutId, totais: totaisNutricao };
+    cards.push(criarCard('🌾', 'Preparo de Misturas e Consumo de Nutrição', `
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:8px;">Preparo de Misturas</div>
+      ${temNutricao ? `<canvas id="${nutId}" style="max-height:160px;"></canvas>` : '<div class="empty-hint">Nenhuma mistura registrada no período.</div>'}
+      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:4px;">Consumo de Nutrição × Pasto</div>
+      <div class="empty-hint">Dados virão de outro relatório — em breve.</div>
+    `));
+
+    // --- CARD 4: SERVIÇOS DE INFRAESTRUTURA ---
+    const servicoMap = {};
+    registros.forEach(r => {
+      (r.dados.servicos||[]).forEach(s => {
+        const det = detalheServico(s);
+        const servLabel = s.tipo + (det ? ` — ${det}` : '');
+        const key = (s.local||'') + '||' + servLabel;
+        if(!servicoMap[key]) servicoMap[key] = { local: s.local||'', servico: servLabel, dias: new Set() };
+        servicoMap[key].dias.add(r.data);
+      });
+    });
+    const servicoRows = Object.values(servicoMap)
+      .map(v => ({ local: v.local, servico: v.servico, nDias: v.dias.size }))
+      .sort((a,b) => {
+        if(!!a.local !== !!b.local) return a.local ? -1 : 1;
+        return (a.local||'').localeCompare(b.local||'') || a.servico.localeCompare(b.servico);
+      });
+    const tabelaHtml = servicoRows.length > 0 ? `
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);">
+            <th style="text-align:left;padding:4px 8px;color:var(--gray);font-size:11px;font-weight:600;">Local</th>
+            <th style="text-align:left;padding:4px 8px;color:var(--gray);font-size:11px;font-weight:600;">Serviço</th>
+            <th style="text-align:center;padding:4px 8px;color:var(--gray);font-size:11px;font-weight:600;">Dias</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${servicoRows.map(row => `
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 8px;">${row.local || '<span class="muted">—</span>'}</td>
+              <td style="padding:6px 8px;">${row.servico}</td>
+              <td style="padding:6px 8px;text-align:center;font-weight:700;">${row.nDias}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    ` : '<div class="empty-hint">Nenhum serviço registrado no período.</div>';
+    cards.push(criarCard('🔧', 'Serviços de Infraestrutura', tabelaHtml));
+
+    // Gráficos
+    requestAnimationFrame(() => {
+      const nsd = window._nutSemData;
+      if(nsd){
+        delete window._nutSemData;
+        const ctx = document.getElementById(nsd.id);
+        if(ctx){
+          const chaves = Object.keys(nsd.totais);
+          chartInstances[nsd.id] = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: chaves, datasets: [{ label:'kg', data: chaves.map(k => nsd.totais[k]), backgroundColor:'#688A7E' }] },
+            options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+          });
+        }
+      }
+      const sscd = window._saudeSemanChartData;
+      if(sscd){
+        delete window._saudeSemanChartData;
+        const ctxSeman = document.getElementById('chartSaudeSeman');
+        if(ctxSeman){
+          chartInstances.saudeSeman = new Chart(ctxSeman, {
+            type: 'line',
+            data: {
+              labels: sscd.labels,
+              datasets: [{ label:'Animais', data: sscd.animaisPorDia, borderColor:'#688A7E', backgroundColor:'rgba(104,138,126,0.15)', tension:0.3, fill:true, pointRadius:4 }]
+            },
+            options: { responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}}}, x:{ticks:{font:{size:9}}} } }
+          });
+        }
+      }
+    });
+
+    return cards;
+  }
+
+  // ===================== PAINEL MENSAL / OUTROS =====================
   function renderAgregado(registros, inicio, fim, saudeAnimal){
+    if(state.periodo === 'semanal') return renderSemanal(registros, inicio, fim, saudeAnimal);
     const cards = [];
     const totalDias = Math.round((fim - inicio) / 86400000) + 1;
 
@@ -587,8 +715,6 @@
     let cardSaude;
     if(state.periodo === 'mensal' && saudeAnimal){
       cardSaude = criarCardSaudeAnimal(saudeAnimal, inicio, fim);
-    } else if(state.periodo === 'semanal'){
-      cardSaude = criarCardSaudeAnimalSemanal(registros, rebanhoLabels, saudeAnimal, inicio, fim);
     } else {
       cardSaude = criarCard('🩺','Sanidade e Vacinas', `
         <div class="kpi-row">
