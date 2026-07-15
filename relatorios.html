@@ -371,7 +371,7 @@
       }
       renderPainel(json.registros, inicio, fim, saudeAnimal);
     } catch (err) {
-      grid.innerHTML = '<div class="status-msg erro">⚠️ Não foi possível conectar à planilha. Verifique sua internet e tente de novo.</div>';
+      grid.innerHTML = '<div class="status-msg erro">⚠️ Erro: ' + String(err) + '</div>';
     }
   }
 
