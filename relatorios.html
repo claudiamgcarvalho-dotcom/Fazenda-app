@@ -587,6 +587,8 @@
     let cardSaude;
     if(state.periodo === 'mensal' && saudeAnimal){
       cardSaude = criarCardSaudeAnimal(saudeAnimal, inicio, fim);
+    } else if(state.periodo === 'semanal'){
+      cardSaude = criarCardSaudeAnimalSemanal(registros, rebanhoLabels);
     } else {
       cardSaude = criarCard('🩺','Sanidade e Vacinas', `
         <div class="kpi-row">
@@ -692,6 +694,21 @@
           options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{stepSize:1}}} }
         });
         delete window._vacinasChartData;
+      }
+      const sscd = window._saudeSemanChartData;
+      if(sscd){
+        delete window._saudeSemanChartData;
+        const ctxSeman = document.getElementById('chartSaudeSeman');
+        if(ctxSeman){
+          chartInstances.saudeSeman = new Chart(ctxSeman, {
+            type: 'line',
+            data: {
+              labels: sscd.labels,
+              datasets: [{ label:'Tratamentos', data: sscd.tratPorDia, borderColor:'#688A7E', backgroundColor:'rgba(104,138,126,0.15)', tension:0.3, fill:true, pointRadius:4 }]
+            },
+            options: { responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}}}, x:{ticks:{font:{size:9}}} } }
+          });
+        }
       }
       const mcd = window._medChartData;
       if(mcd){
@@ -806,6 +823,88 @@
         </div>
         ${medHtml}
       </div>
+    `);
+  }
+
+  function criarCardSaudeAnimalSemanal(registros, rebanhoLabels){
+    // Vacinas
+    const porProduto = {};
+    registros.forEach(r => {
+      ((r.dados.vacinasVermifugos || {}).itens || []).forEach(v => {
+        const nome = String(v.produto || 'Sem nome').trim();
+        const tipo = String(v.tipo || 'Vacina').trim();
+        const qtd  = Number(v.qtdAnimais || 0);
+        if(!porProduto[nome]) porProduto[nome] = { nome, tipo, total: 0 };
+        porProduto[nome].total += qtd;
+      });
+    });
+    const produtos       = Object.values(porProduto);
+    const totalAplicacoes = registros.reduce((s,r) => s + ((r.dados.vacinasVermifugos||{}).itens||[]).length, 0);
+    const totalCabecas   = produtos.reduce((s,p) => s + p.total, 0);
+    const maxProd        = produtos.reduce((m,p) => Math.max(m, p.total), 1);
+
+    // Medicamentos
+    const contCat = {}, contSin = {};
+    const tratPorDia = registros.map(r => {
+      const trats = (r.dados.sanidadeAnimal || {}).tratamentos || [];
+      trats.forEach(t => {
+        const qtd = Number(t.qtdAnimais || 1);
+        (t.categorias || []).forEach(c => { contCat[c] = (contCat[c] || 0) + qtd; });
+        (t.sintomas   || []).forEach(s => { contSin[s] = (contSin[s] || 0) + qtd; });
+      });
+      return trats.length;
+    });
+    const totalTrat = tratPorDia.reduce((a,b) => a+b, 0);
+    const topCat = Object.entries(contCat).sort((a,b) => b[1]-a[1]).slice(0,5);
+    const topSin = Object.entries(contSin).sort((a,b) => b[1]-a[1]).slice(0,5);
+    const maxCat = topCat[0] ? topCat[0][1] : 1;
+    const maxSin = topSin[0] ? topSin[0][1] : 1;
+
+    if(totalTrat > 0) window._saudeSemanChartData = { labels: rebanhoLabels, tratPorDia };
+
+    function miniBar(valor, max, cor){
+      return `<div style="flex:1;background:var(--border);border-radius:3px;height:8px;"><div style="width:${Math.round(valor/max*100)}%;background:${cor};height:8px;border-radius:3px;"></div></div>`;
+    }
+    function listaBarras(itens, max, cor){
+      return itens.map(([k,v]) => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <span style="min-width:90px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${k}</span>
+          ${miniBar(v, max, cor)}
+          <span style="font-size:12px;font-weight:600;min-width:20px;text-align:right;">${v}</span>
+        </div>`).join('');
+    }
+
+    const vacinasListHtml = produtos.length > 0
+      ? produtos.map(p => {
+          const label = p.tipo === 'Vermífugo' ? 'Vermíf.' : p.tipo === 'Carrapaticida' ? 'Carrap.' : 'Vac.';
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+            <span style="min-width:110px;font-size:12px;">${p.nome} <span class="muted">(${label})</span></span>
+            ${miniBar(p.total, maxProd, '#1A78C2')}
+            <span style="font-size:12px;font-weight:600;min-width:20px;text-align:right;">${p.total}</span>
+          </div>`;
+        }).join('')
+      : '<div class="empty-hint">Nenhuma aplicação no período.</div>';
+
+    return criarCard('🩺', 'Sanidade Animal', `
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:8px;">💉 Vacinas e Vermífugos</div>
+      <div class="kpi-row" style="margin-bottom:10px;">
+        <div class="kpi"><div class="num">${totalAplicacoes}</div><div class="label">Aplicações</div></div>
+        <div class="kpi"><div class="num">${totalCabecas}</div><div class="label">Cabeças</div></div>
+      </div>
+      ${vacinasListHtml}
+      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:8px;">💊 Medicamentos</div>
+      <div class="kpi-row" style="margin-bottom:10px;">
+        <div class="kpi"><div class="num">${totalTrat}</div><div class="label">Tratamentos</div></div>
+      </div>
+      ${totalTrat > 0 ? `
+        <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:4px;">Tratamentos por dia</div>
+        <canvas id="chartSaudeSeman" style="max-height:120px;margin-bottom:14px;"></canvas>
+        <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:6px;">Categorias mais tratadas <span class="muted" style="font-weight:400;">(animais)</span></div>
+        ${listaBarras(topCat, maxCat, '#1A78C2')}
+        <div style="font-size:11px;font-weight:600;color:var(--gray);margin:10px 0 6px;">Sintomas mais comuns <span class="muted" style="font-weight:400;">(animais)</span></div>
+        ${listaBarras(topSin, maxSin, '#688A7E')}
+      ` : '<div class="empty-hint" style="margin-top:4px;">Nenhum tratamento no período.</div>'}
     `);
   }
 
