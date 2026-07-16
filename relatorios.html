@@ -421,10 +421,38 @@
 
     const totalDias = state.periodo === 'diario' ? 1 : Math.round((fim - inicio) / 86400000) + 1;
     const contagem = state.periodo === 'diario' ? Math.min(registros.length, 1) : registros.length;
+    const btnBaixar = state.periodo === 'semanal'
+      ? `<button id="btnBaixarImagem" onclick="baixarRelatorioImagem()" style="margin-top:10px;padding:7px 16px;background:#688A7E;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📥 Baixar como imagem</button>`
+      : '';
     header.innerHTML = `
       <h1>🏠 Fazenda ${state.fazenda} — ${periodoTexto}</h1>
       <div class="sub">${contagem} de ${totalDias} dia(s) com registro</div>
+      ${btnBaixar}
     `;
+  }
+
+  async function baixarRelatorioImagem(){
+    const btn = document.getElementById('btnBaixarImagem');
+    if(btn){ btn.textContent = '⏳ Gerando...'; btn.disabled = true; }
+    const grid = document.getElementById('cardsGrid');
+    try {
+      const canvas = await html2canvas(grid, {
+        backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg') || '#F5F7F5',
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      const link = document.createElement('a');
+      const fazenda = state.fazenda;
+      const dataEl = document.querySelector('.panel-header h1');
+      const titulo = dataEl ? dataEl.textContent.replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'-') : 'relatorio-semanal';
+      link.download = `${titulo}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch(e) {
+      alert('Erro ao gerar imagem: ' + e.message);
+    }
+    if(btn){ btn.textContent = '📥 Baixar como imagem'; btn.disabled = false; }
   }
 
   function badgeUrgencia(urgencia){
