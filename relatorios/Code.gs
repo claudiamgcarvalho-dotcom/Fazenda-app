@@ -39,6 +39,11 @@ var SAUDE_ANIMAL_SPREADSHEET_ID = '1u58XdIQaR9ht87A8ngMDXEXAVbC8yXnEUZ_PHLb1iaU'
 var VACINAS_HEADERS     = ['Timestamp', 'Data', 'Fazenda', 'Categoria Animal', 'Qtd Animais', 'Nome', 'Tipo', 'Dose', 'Observações'];
 var MEDICAMENTOS_HEADERS = ['Timestamp', 'Data', 'Fazenda', 'Categoria Animal', 'Qtd Animais', 'ID Animal', 'Sintomas', 'Medicamento', 'Observações'];
 
+// Credenciais Trello para leitura de status dos cartões (somente leitura).
+// Gere em: trello.com/power-ups/admin
+var TRELLO_API_KEY = '';  // ← configure diretamente no editor do Apps Script
+var TRELLO_TOKEN   = '';  // ← configure diretamente no editor do Apps Script
+
 function doPost(e) {
   var raw = (e && e.postData && e.postData.contents) || '';
   var dados = {};
@@ -290,6 +295,13 @@ function doGet(e) {
   // Rota separada para o painel de Estoque (não precisa de fazenda/inicio/fim).
   if (params.action === 'estoque') return doGetEstoque();
 
+  // Rota para buscar status de um cartão Trello pelo shortLink.
+  if (params.action === 'trelloStatus') {
+    var cardId = (params.cardId || '').trim();
+    if (!cardId) return jsonOutput({ ok: false, erro: 'cardId ausente' });
+    return jsonOutput({ ok: true, status: getTrelloCardStatus(cardId) });
+  }
+
   var fazenda = (params.fazenda || '').trim();
   var inicio = params.inicio || '';
   var fim = params.fim || '';
@@ -373,6 +385,32 @@ function enriquecerComLinksTrello(registros, fazenda) {
     });
   } catch (err) {
     // Planilha de Solicitações ainda não configurada — segue sem o link.
+  }
+}
+
+// Busca quadro e lista de um cartão Trello pelo shortLink (ex: "aBcDeFgH").
+// Faz 3 chamadas encadeadas: card → list → board.
+// Retorna { quadro, lista } ou null se falhar / credenciais não configuradas.
+function getTrelloCardStatus(cardId) {
+  if (!TRELLO_API_KEY || !TRELLO_TOKEN) return null;
+  try {
+    var base = 'https://api.trello.com/1/';
+    var qs   = '?key=' + TRELLO_API_KEY + '&token=' + TRELLO_TOKEN;
+
+    var cardResp = UrlFetchApp.fetch(base + 'cards/' + cardId + qs + '&fields=idList', { muteHttpExceptions: true });
+    if (cardResp.getResponseCode() !== 200) return null;
+    var card = JSON.parse(cardResp.getContentText());
+
+    var listResp = UrlFetchApp.fetch(base + 'lists/' + card.idList + qs + '&fields=name,idBoard', { muteHttpExceptions: true });
+    if (listResp.getResponseCode() !== 200) return { lista: null, quadro: null };
+    var list = JSON.parse(listResp.getContentText());
+
+    var boardResp = UrlFetchApp.fetch(base + 'boards/' + list.idBoard + qs + '&fields=name', { muteHttpExceptions: true });
+    var board = boardResp.getResponseCode() === 200 ? JSON.parse(boardResp.getContentText()) : null;
+
+    return { lista: list.name, quadro: board ? board.name : null };
+  } catch (err) {
+    return null;
   }
 }
 

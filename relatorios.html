@@ -579,13 +579,13 @@
     const atvsSet = new Set();
     registros.forEach(r => ((r.dados.atividadesCurral||{}).atividades||[]).forEach(a => atvsSet.add(a)));
     cards.push(criarCard('🐄', 'Evolução de Rebanho', `
-      <div class="kpi-row">
-        <div class="kpi"><div class="num">${diasTodo}</div><div class="label">Dias — gado todo</div></div>
-        <div class="kpi"><div class="num">${diasParte}</div><div class="label">Dias — parte do gado</div></div>
-        <div class="kpi"><div class="num">${mediaAnimais}</div><div class="label">Média animais/dia</div></div>
+      <div style="text-align:center;margin-bottom:10px;">
+        <div class="num" style="font-size:2.6rem;line-height:1.1;">${mediaAnimais}</div>
+        <div class="label" style="font-size:1rem;margin-top:4px;">animais no total na fazenda</div>
+        <div style="font-size:0.82rem;color:var(--gray);margin-top:6px;">${diasTodo} contagem(s) de gado todo e ${diasParte} contagem(s) parciais</div>
       </div>
-      <div class="list-item" style="margin-top:8px;">
-        ${totalFaltou > 0 ? `⚠️ Faltaram <strong>${totalFaltou}</strong> cabeça(s) no período` : '✅ Nenhuma falta de cabeça no período'}
+      <div class="list-item" style="margin-top:4px;">
+        ${totalFaltou > 0 ? `⚠️ Faltaram <strong>${totalFaltou}</strong> cabeça(s) no período` : '✅ Não faltou nenhuma cabeça conforme contagem no período'}
       </div>
       <hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);letter-spacing:.05em;margin-bottom:6px;">🐂 Curral</div>
@@ -621,18 +621,15 @@
       (r.dados.servicos||[]).forEach(s => {
         const det = detalheServico(s);
         const servLabel = s.tipo + (det ? ` — ${det}` : '');
-        const key = (s.local||'') + '||' + servLabel;
-        if(!servicoMap[key]) servicoMap[key] = { local: String(s.local||''), servico: servLabel, dias: new Set() };
-        servicoMap[key].dias.add(r.data);
+        if(!servicoMap[servLabel]) servicoMap[servLabel] = { locais: new Set(), servico: servLabel, dias: new Set() };
+        const localVal = Array.isArray(s.local) ? s.local.join(', ') : String(s.local||'');
+        localVal.split(',').map(l => l.trim()).filter(Boolean).forEach(l => servicoMap[servLabel].locais.add(l));
+        servicoMap[servLabel].dias.add(r.data);
       });
     });
     const servicoRows = Object.values(servicoMap)
-      .map(v => ({ local: String(v.local||''), servico: String(v.servico||''), nDias: v.dias.size }))
-      .sort((a,b) => {
-        if(!!a.local !== !!b.local) return a.local ? -1 : 1;
-        if(a.local < b.local) return -1; if(a.local > b.local) return 1;
-        return a.servico < b.servico ? -1 : a.servico > b.servico ? 1 : 0;
-      });
+      .map(v => ({ local: Array.from(v.locais).sort().join(', '), servico: String(v.servico||''), nDias: v.dias.size }))
+      .sort((a,b) => a.servico < b.servico ? -1 : a.servico > b.servico ? 1 : 0);
     const tabelaHtml = servicoRows.length > 0 ? `
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead>
@@ -654,6 +651,42 @@
     ` : '<div class="empty-hint">Nenhum serviço registrado no período.</div>';
     cards.push(criarCard('🔧', 'Serviços de Infraestrutura', tabelaHtml));
 
+    // --- CARD 5: SOLICITAÇÕES DA SEMANA ---
+    const solicitacoesMap = {};
+    registros.forEach(r => {
+      ((r.dados.solicitacoesProdutos||{}).itens||[]).forEach(s => {
+        const desc = (s.descricao || s.tipo || '').trim();
+        if(!desc) return;
+        solicitacoesMap[desc] = s;
+      });
+    });
+    const solicitacoesSem = Object.values(solicitacoesMap);
+    let solHtml = '';
+    const trelloFetch = [];
+    if(solicitacoesSem.length === 0){
+      solHtml = '<div class="empty-hint">Nenhuma solicitação registrada no período.</div>';
+    } else {
+      const linhas = solicitacoesSem.map((s, i) => {
+        const desc = (s.descricao || s.tipo || '-').replace(/\n/g,'<br>');
+        let trelloHtml = '';
+        if(s.linkTrello && /^https:\/\//i.test(s.linkTrello)){
+          const spanId = `trello-sol-${i}`;
+          trelloHtml = `<span id="${spanId}" class="muted" style="font-size:11px;margin-left:4px;">⏳ carregando...</span>`;
+          trelloFetch.push({ id: spanId, url: s.linkTrello });
+        }
+        return `<div class="list-item"><strong>${i+1}.</strong> ${desc} ${badgeUrgencia(s.urgencia)}${trelloHtml}</div>`;
+      });
+      const aguardando = solicitacoesSem
+        .map((s, i) => ({ n: i+1, tem: !!(s.linkTrello && /^https:\/\//i.test(s.linkTrello)) }))
+        .filter(x => !x.tem);
+      const statusLine = aguardando.length === 0
+        ? `<div class="list-item" style="margin-top:2px;color:#0D47A1;font-weight:600;">✅ Todas em andamento ou finalizadas</div>`
+        : `<div class="list-item" style="margin-top:2px;color:#E65100;font-weight:600;">⏳ ${aguardando.map(x=>'N° '+x.n).join(', ')} aguardando providências</div>`;
+      solHtml = linhas.join('') + '<hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">' + statusLine;
+    }
+    if(trelloFetch.length) window._trelloFetch = trelloFetch;
+    cards.push(criarCard('📋', 'Solicitações da Semana', solHtml));
+
     // Gráficos
     requestAnimationFrame(() => {
       const nsd = window._nutSemData;
@@ -662,10 +695,39 @@
         const ctx = document.getElementById(nsd.id);
         if(ctx){
           const chaves = Object.keys(nsd.totais);
+          const nutBarLabels = {
+            id:'nutBarLabels',
+            afterDatasetsDraw(chart){
+              const {ctx} = chart;
+              chart.data.datasets.forEach((ds,i) => {
+                chart.getDatasetMeta(i).data.forEach((bar,j) => {
+                  const val = ds.data[j];
+                  if(!val) return;
+                  const label = val + ' kg';
+                  ctx.save();
+                  ctx.font = 'bold 11px sans-serif';
+                  ctx.textBaseline = 'middle';
+                  const tw = ctx.measureText(label).width;
+                  const barW = bar.x - chart.scales.x.getPixelForValue(0);
+                  if(barW > tw + 12){
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(label, bar.x - 6, bar.y);
+                  } else {
+                    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#333';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(label, bar.x + 5, bar.y);
+                  }
+                  ctx.restore();
+                });
+              });
+            }
+          };
           chartInstances[nsd.id] = new Chart(ctx, {
             type: 'bar',
             data: { labels: chaves, datasets: [{ label:'kg', data: chaves.map(k => nsd.totais[k]), backgroundColor:'#688A7E' }] },
-            options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+            options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, display:false}} },
+            plugins: [nutBarLabels]
           });
         }
       }
@@ -683,6 +745,31 @@
             options: { responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}}}, x:{ticks:{font:{size:9}}} } }
           });
         }
+      }
+
+      // Busca status dos cartões Trello de forma assíncrona
+      const tf = window._trelloFetch;
+      if(tf && tf.length){
+        delete window._trelloFetch;
+        tf.forEach(async ({ id, url }) => {
+          const match = url.match(/trello\.com\/c\/([a-zA-Z0-9]+)/);
+          if(!match) return;
+          const el = document.getElementById(id);
+          if(!el) return;
+          try {
+            const resp = await fetch(API_URL_RELATORIOS + '?action=trelloStatus&cardId=' + match[1]);
+            const data = await resp.json();
+            if(data.ok && data.status && (data.status.lista || data.status.quadro)){
+              const { quadro, lista } = data.status;
+              el.textContent = quadro && lista ? `📋 ${quadro} › ${lista}` : `📋 ${lista || quadro}`;
+              el.style.color = 'var(--text)';
+            } else {
+              el.innerHTML = `🔗 <a href="${url}" target="_blank" rel="noopener" class="link-trello">Ver no Trello</a>`;
+            }
+          } catch(e) {
+            el.innerHTML = `🔗 <a href="${url}" target="_blank" rel="noopener" class="link-trello">Ver no Trello</a>`;
+          }
+        });
       }
     });
 
