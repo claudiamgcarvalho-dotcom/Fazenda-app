@@ -216,13 +216,25 @@ function atualizarResumoMensal(ss, fazenda, dataISO) {
   if (abaResumo.getLastRow() === 0) abaResumo.appendRow(RESUMO_MENSAL_HEADERS);
 
   var linhasResumo = abaResumo.getDataRange().getValues();
+
+  // Preserva colunas manuais F (TotalEsperadoDias) e G (ObservacoesMes)
+  // antes de apagar as linhas do mês, indexadas por funcionário.
+  var manuais = {};
+  for (var k = 1; k < linhasResumo.length; k++) {
+    if (Number(linhasResumo[k][0]) === ano && Number(linhasResumo[k][1]) === mes) {
+      var nomeFunc = String(linhasResumo[k][2]);
+      manuais[nomeFunc] = { colF: linhasResumo[k][5] || '', colG: linhasResumo[k][6] || '' };
+    }
+  }
+
   for (var j = linhasResumo.length - 1; j >= 1; j--) {
     if (Number(linhasResumo[j][0]) === ano && Number(linhasResumo[j][1]) === mes) {
       abaResumo.deleteRow(j + 1);
     }
   }
   Object.keys(totais).forEach(function (nome) {
-    abaResumo.appendRow([ano, mes, nome, totais[nome].horas, totais[nome].dias]);
+    var man = manuais[nome] || { colF: '', colG: '' };
+    abaResumo.appendRow([ano, mes, nome, totais[nome].horas, totais[nome].dias, man.colF, man.colG]);
   });
 }
 
